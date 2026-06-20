@@ -13,13 +13,15 @@ namespace BG.Invoice.IntegrationTests.Infrastructure;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
-    private readonly DbConnection _connection;
+    private readonly string _dbPath;
+    private readonly string _connectionString;
+    private DbConnection? _initConnection;
     private bool _seeded;
 
     public CustomWebApplicationFactory()
     {
-        _connection = new SqliteConnection("DataSource=:memory:");
-        _connection.Open();
+        _dbPath = Path.Combine(Path.GetTempPath(), $"bg-invoice-tests-{Guid.NewGuid():N}.db");
+        _connectionString = $"DataSource={_dbPath};Cache=Shared;Pooling=True;Foreign Keys=True;Default Timeout=30";
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -37,19 +39,16 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             if (dbContextDescriptor is not null)
                 services.Remove(dbContextDescriptor);
 
-            services.AddSingleton<DbConnection>(_connection);
-
-            services.AddScoped<AppDbContext>(sp =>
+            services.AddScoped<AppDbContext>(_ =>
             {
-                var conn = sp.GetRequiredService<DbConnection>();
                 var options = new DbContextOptionsBuilder<AppDbContext>()
-                    .UseSqlite(conn)
+                    .UseSqlite(_connectionString)
                     .Options;
                 return new AppDbContext(options);
             });
 
             services.AddDbContextFactory<AppDbContext>(opt =>
-                opt.UseSqlite(_connection), ServiceLifetime.Singleton);
+                opt.UseSqlite(_connectionString), ServiceLifetime.Singleton);
         });
     }
 
@@ -58,6 +57,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         if (_seeded)
             return;
         _seeded = true;
+
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+        using var pragma = conn.CreateCommand();
+        pragma.CommandText = "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;";
+        pragma.ExecuteNonQuery();
+        _initConnection = conn;
 
         using var scope = Services.CreateScope();
         var sp = scope.ServiceProvider;
@@ -117,8 +123,12 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     {
         if (disposing)
         {
-            _connection.Dispose();
+            try { _initConnection?.Close(); } catch { }
+            try { _initConnection?.Dispose(); } catch { }
             _seeded = false;
+            try { if (File.Exists(_dbPath)) File.Delete(_dbPath); } catch { }
+            try { if (File.Exists(_dbPath + "-wal")) File.Delete(_dbPath + "-wal"); } catch { }
+            try { if (File.Exists(_dbPath + "-shm")) File.Delete(_dbPath + "-shm"); } catch { }
         }
         base.Dispose(disposing);
     }
