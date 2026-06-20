@@ -46,7 +46,7 @@ public class ProductTests
         var product = Product.Create("P001", "Brocas", 10m, 1, stock: 10);
         var act = () => product.DecrementStock(20);
         act.Should().Throw<BusinessRuleException>().WithMessage("*Insufficient stock*");
-        product.Stock.Should().Be(10);  // unchanged
+        product.Stock.Should().Be(10);
     }
 
     [Fact]

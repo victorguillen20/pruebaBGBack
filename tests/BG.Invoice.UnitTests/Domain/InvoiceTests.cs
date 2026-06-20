@@ -37,8 +37,8 @@ namespace BG.Invoice.UnitTests.Domain
             invoice.AddDetail(productId: 1, quantity: 2, unitPrice: 10m, productNameSnapshot: "Brocas", productCodeSnapshot: "P001");
             invoice.AddDetail(productId: 2, quantity: 3, unitPrice: 5m, productNameSnapshot: "Tornillos", productCodeSnapshot: "P002");
 
-            invoice.Subtotal.Should().Be(35m);  // 2*10 + 3*5
-            invoice.Total.Should().Be(35m);     // no tax set yet
+            invoice.Subtotal.Should().Be(35m);
+            invoice.Total.Should().Be(35m);
         }
 
         [Fact]
@@ -47,7 +47,7 @@ namespace BG.Invoice.UnitTests.Domain
             var invoice = CreateTestInvoice();
             invoice.AddDetail(1, 1, 100m, "X", "P1");
             invoice.SetTaxAmount(13m, 13m);
-            // Total = 113
+
             invoice.AddPayment(PaymentMethod.Efectivo, 113m, null, DateTime.UtcNow);
             invoice.Status.Should().Be(InvoiceStatus.Pagada);
         }

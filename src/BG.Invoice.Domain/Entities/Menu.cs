@@ -13,10 +13,9 @@ public class Menu : Entity
     public int Order { get; private set; }
     public bool IsActive { get; private set; } = true;
 
-    // Navigation
     public ICollection<RoleMenu> RoleMenus { get; private set; } = new List<RoleMenu>();
 
-    private Menu() { }  // EF
+    private Menu() { }
 
     public static Menu Create(string key, string label, string icon, string route, int order = 0)
     {

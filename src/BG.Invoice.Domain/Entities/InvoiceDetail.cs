@@ -12,15 +12,13 @@ public class InvoiceDetail : Entity
     public decimal UnitPrice { get; private set; }
     public decimal LineTotal { get; private set; }
 
-    // Snapshot of product info at the time of invoicing (for display in PDF even if product is later deleted/renamed)
     public string ProductNameSnapshot { get; private set; } = default!;
     public string ProductCodeSnapshot { get; private set; } = default!;
 
-    // Navigation
     public Invoice Invoice { get; private set; } = default!;
     public Product Product { get; private set; } = default!;
 
-    private InvoiceDetail() { }  // EF
+    private InvoiceDetail() { }
 
     public static InvoiceDetail Create(int productId, int quantity, decimal unitPrice, decimal lineTotal, string productNameSnapshot, string productCodeSnapshot)
     {

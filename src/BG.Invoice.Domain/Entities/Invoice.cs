@@ -19,13 +19,12 @@ public class Invoice : Entity
     public decimal TaxAmount { get; private set; }
     public decimal Total { get; private set; }
 
-    // Navigation
     public Customer Customer { get; private set; } = default!;
     public User Seller { get; private set; } = default!;
     public ICollection<InvoiceDetail> Details { get; private set; } = new List<InvoiceDetail>();
     public ICollection<Payment> Payments { get; private set; } = new List<Payment>();
 
-    private Invoice() { }  // EF
+    private Invoice() { }
 
     public static Invoice Create(int number, DateTime dateUtc, int customerId, int sellerId, InvoiceType type, DateTime? dueDate = null, string? notes = null)
     {
@@ -103,7 +102,7 @@ public class Invoice : Entity
     private void RecalculateTotals()
     {
         Subtotal = Math.Round(Details.Sum(d => d.LineTotal), 2, MidpointRounding.AwayFromZero);
-        // TaxAmount is set externally via SetTaxAmount() based on CompanyConfig.TaxPercent
+
         Total = Math.Round(Subtotal + TaxAmount, 2, MidpointRounding.AwayFromZero);
         UpdateStatus();
     }
@@ -113,6 +112,6 @@ public class Invoice : Entity
         if (Status == InvoiceStatus.Anulada) return;
         var paid = Payments.Sum(p => p.Amount);
         if (paid >= Total && Total > 0) Status = InvoiceStatus.Pagada;
-        else if (paid > 0 && paid < Total) Status = InvoiceStatus.Pendiente;  // partial payment, still pending
+        else if (paid > 0 && paid < Total) Status = InvoiceStatus.Pendiente;
     }
 }

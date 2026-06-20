@@ -3,13 +3,9 @@ using BG.Invoice.Domain.Exceptions;
 
 namespace BG.Invoice.Domain.Entities;
 
-/// <summary>
-/// Singleton configuration. There is only ONE row in the DB (Id = 1).
-/// Stores company info, tax percent, currency, and the atomic counter for invoice numbers.
-/// </summary>
 public class CompanyConfig : Entity
 {
-    public int Id { get; private set; } = 1;  // singleton
+    public int Id { get; private set; } = 1;
     public string CompanyName { get; private set; } = default!;
     public string? Phone { get; private set; }
     public string? Email { get; private set; }
@@ -22,12 +18,9 @@ public class CompanyConfig : Entity
     public string? PostalCode { get; private set; }
     public string? LogoUrl { get; private set; }
 
-    /// <summary>
-    /// Atomic counter for invoice numbers. Updated via a serialized transaction in Infrastructure.
-    /// </summary>
     public int LastInvoiceNumber { get; private set; }
 
-    private CompanyConfig() { }  // EF
+    private CompanyConfig() { }
 
     public static CompanyConfig Create(string companyName, decimal taxPercent = 13m, string currencySymbol = "$", string? phone = null, string? email = null, string? taxId = null, string? address = null, string? city = null, string? region = null, string? postalCode = null, string? logoUrl = null)
     {
@@ -70,10 +63,6 @@ public class CompanyConfig : Entity
         LogoUrl = logoUrl?.Trim();
     }
 
-    /// <summary>
-    /// Atomically increment the invoice number counter.
-    /// In Infrastructure, this is called inside a serialized transaction (BEGIN IMMEDIATE on SQLite).
-    /// </summary>
     public int NextInvoiceNumber()
     {
         LastInvoiceNumber++;

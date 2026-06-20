@@ -9,11 +9,10 @@ public class Role : Entity
     public string? Description { get; private set; }
     public bool IsActive { get; private set; } = true;
 
-    // Navigation
     public ICollection<User> Users { get; private set; } = new List<User>();
     public ICollection<RoleMenu> RoleMenus { get; private set; } = new List<RoleMenu>();
 
-    private Role() { }  // EF
+    private Role() { }
 
     public static Role Create(string name, string? description = null)
     {

@@ -16,10 +16,9 @@ public class Customer : Entity
     public bool IsActive { get; private set; } = true;
     public decimal? CreditLimit { get; private set; }
 
-    // Navigation
     public ICollection<Invoice> Invoices { get; private set; } = new List<Invoice>();
 
-    private Customer() { }  // EF
+    private Customer() { }
 
     public static Customer Create(string identification, string name, CustomerType type, string? phone = null, string? email = null, string? address = null, decimal? creditLimit = null)
     {

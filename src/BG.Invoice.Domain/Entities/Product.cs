@@ -15,11 +15,10 @@ public class Product : Entity
     public int CategoryId { get; private set; }
     public bool IsActive { get; private set; } = true;
 
-    // Navigation
     public Category Category { get; private set; } = default!;
     public ICollection<InvoiceDetail> InvoiceDetails { get; private set; } = new List<InvoiceDetail>();
 
-    private Product() { }  // EF
+    private Product() { }
 
     public static Product Create(string code, string name, decimal price, int categoryId, int stock = 0, decimal? cost = null, string? description = null)
     {
@@ -56,10 +55,6 @@ public class Product : Entity
         Description = description?.Trim();
     }
 
-    /// <summary>
-    /// Decrement stock atomically. Throws if it would go below 0.
-    /// Returns the new stock value.
-    /// </summary>
     public int DecrementStock(int quantity)
     {
         if (quantity <= 0) throw new BusinessRuleException("Decrement quantity must be positive.");
@@ -69,9 +64,6 @@ public class Product : Entity
         return Stock;
     }
 
-    /// <summary>
-    /// Increment stock (e.g. on invoice cancellation).
-    /// </summary>
     public int IncrementStock(int quantity)
     {
         if (quantity <= 0) throw new BusinessRuleException("Increment quantity must be positive.");

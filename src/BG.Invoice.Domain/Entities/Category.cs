@@ -9,10 +9,9 @@ public class Category : Entity
     public string Name { get; private set; } = default!;
     public bool IsActive { get; private set; } = true;
 
-    // Navigation
     public ICollection<Product> Products { get; private set; } = new List<Product>();
 
-    private Category() { }  // EF
+    private Category() { }
 
     public static Category Create(string name)
     {
@@ -26,9 +25,6 @@ public class Category : Entity
         Name = name.Trim();
     }
 
-    /// <summary>
-    /// Soft-delete via IsActive. Throws if there are active products — caller must handle the 409 response in the controller.
-    /// </summary>
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;
 }

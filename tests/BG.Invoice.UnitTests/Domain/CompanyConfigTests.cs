@@ -14,7 +14,7 @@ public class CompanyConfigTests
         config.LastInvoiceNumber.Should().Be(0);
         config.TaxPercent.Should().Be(13m);
         config.CurrencySymbol.Should().Be("$");
-        config.Id.Should().Be(1);  // singleton
+        config.Id.Should().Be(1);
     }
 
     [Fact]

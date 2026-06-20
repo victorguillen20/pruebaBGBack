@@ -18,11 +18,10 @@ public class User : Entity
     public int FailedLoginAttempts { get; private set; }
     public DateTime? LockoutUntil { get; private set; }
 
-    // Navigation
     public Role Role { get; private set; } = default!;
     public ICollection<Invoice> InvoicesAsSeller { get; private set; } = new List<Invoice>();
 
-    private User() { }  // EF
+    private User() { }
 
     public static User Create(string userName, string email, string passwordHash, string firstName, string lastName, int roleId)
     {

@@ -13,10 +13,9 @@ public class Payment : Entity
     public string? Reference { get; private set; }
     public DateTime PaymentDate { get; private set; }
 
-    // Navigation
     public Invoice Invoice { get; private set; } = default!;
 
-    private Payment() { }  // EF
+    private Payment() { }
 
     public Payment(int invoiceId, PaymentMethod method, decimal amount, string? reference, DateTime paymentDateUtc)
     {
