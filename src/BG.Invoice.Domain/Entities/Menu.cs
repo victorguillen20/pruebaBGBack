@@ -5,7 +5,7 @@ namespace BG.Invoice.Domain.Entities;
 
 public class Menu : Entity
 {
-    public int Id { get; private set; }
+    public int Id { get; internal set; }
     public string Key { get; private set; } = default!;
     public string Label { get; private set; } = default!;
     public string Icon { get; private set; } = default!;

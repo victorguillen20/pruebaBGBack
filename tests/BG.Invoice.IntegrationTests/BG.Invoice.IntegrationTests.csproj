@@ -3,6 +3,7 @@
     <OutputType>Library</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <NoWarn>$(NoWarn);CA1707;CA1822</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\BG.Invoice.Domain\BG.Invoice.Domain.csproj" />
