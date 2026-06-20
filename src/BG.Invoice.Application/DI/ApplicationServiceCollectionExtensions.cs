@@ -20,6 +20,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<ICompanyConfigService, CompanyConfigService>();
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IRoleService, RoleService>();
 
         return services;
     }
