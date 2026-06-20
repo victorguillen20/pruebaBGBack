@@ -58,6 +58,11 @@ public class UserService : IUserService
         var user = await _repository.GetByIdAsync(id, ct);
         if (user is null)
             return Result.Failure<UserResponse>($"User with id '{id}' was not found.");
+
+        user.UpdateProfile(request.FirstName, request.LastName, request.RoleId, request.IsActive);
+        _repository.Update(user);
+        await _unitOfWork.SaveChangesAsync(ct);
+
         var createdAt = DateTime.UtcNow;
         return Result.Success(user.ToResponse(user.Role?.Name ?? "", createdAt));
     }
