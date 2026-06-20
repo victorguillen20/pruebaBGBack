@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using BG.Invoice.Application.Abstractions;
 using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
@@ -26,7 +25,7 @@ public class CustomerServiceTests
     private static Customer CreateCustomer(int id, string identification, string name)
     {
         var customer = Customer.Create(identification, name, CustomerType.Persona);
-        typeof(Customer).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(customer, id);
+        customer.Id = id;
         return customer;
     }
 

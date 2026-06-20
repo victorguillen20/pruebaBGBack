@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using BG.Invoice.Application.Abstractions;
 using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
@@ -26,10 +25,9 @@ public class DashboardServiceTests
     private static BG.Invoice.Domain.Entities.Invoice CreateInvoice(int id, int number, int sellerId, decimal total, InvoiceStatus status)
     {
         var invoice = BG.Invoice.Domain.Entities.Invoice.Create(number, DateTime.UtcNow, 1, sellerId, InvoiceType.Contado);
-        typeof(BG.Invoice.Domain.Entities.Invoice).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(invoice, id);
-        typeof(BG.Invoice.Domain.Entities.Invoice).GetField("<Date>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(invoice, DateTime.UtcNow);
-        typeof(BG.Invoice.Domain.Entities.Invoice).GetField("<Total>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(invoice, total);
-        typeof(BG.Invoice.Domain.Entities.Invoice).GetField("<Status>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(invoice, status);
+        invoice.Id = id;
+        invoice.Total = total;
+        invoice.Status = status;
         return invoice;
     }
 

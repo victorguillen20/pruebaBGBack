@@ -6,18 +6,18 @@ namespace BG.Invoice.Domain.Entities;
 
 public class Invoice : Entity
 {
-    public int Id { get; private set; }
+    public int Id { get; internal set; }
     public int Number { get; private set; }
-    public DateTime Date { get; private set; }
+    public DateTime Date { get; internal set; }
     public int CustomerId { get; private set; }
     public int SellerId { get; private set; }
     public InvoiceType Type { get; private set; } = InvoiceType.Contado;
     public DateTime? DueDate { get; private set; }
-    public InvoiceStatus Status { get; private set; } = InvoiceStatus.Pendiente;
+    public InvoiceStatus Status { get; internal set; } = InvoiceStatus.Pendiente;
     public string? Notes { get; private set; }
     public decimal Subtotal { get; private set; }
     public decimal TaxAmount { get; private set; }
-    public decimal Total { get; private set; }
+    public decimal Total { get; internal set; }
 
     public Customer Customer { get; private set; } = default!;
     public User Seller { get; private set; } = default!;

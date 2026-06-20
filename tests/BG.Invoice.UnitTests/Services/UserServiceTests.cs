@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using BG.Invoice.Application.Abstractions;
 using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
@@ -26,15 +25,15 @@ public class UserServiceTests
     private static User CreateUser(int id, string userName, int roleId, bool isActive = true)
     {
         var user = User.Create(userName, "test@test.com", "hash", "First", "Last", roleId);
-        typeof(User).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(user, id);
-        typeof(User).GetField("<IsActive>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(user, isActive);
+        user.Id = id;
+        user.IsActive = isActive;
         return user;
     }
 
     private static Role CreateRole(int id, string name)
     {
         var role = Role.Create(name);
-        typeof(Role).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(role, id);
+        role.Id = id;
         return role;
     }
 
@@ -43,7 +42,7 @@ public class UserServiceTests
     {
         var user = CreateUser(1, "admin", 1);
         var role = CreateRole(1, "Admin");
-        typeof(User).GetField("<Role>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(user, role);
+        user.Role = role;
 
         _repository.Setup(r => r.GetByIdWithRoleAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
