@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BG.Invoice.Api/BG.Invoice.Api.csproj" />
+    <Project Path="src/BG.Invoice.Application/BG.Invoice.Application.csproj" />
+    <Project Path="src/BG.Invoice.Domain/BG.Invoice.Domain.csproj" />
+    <Project Path="src/BG.Invoice.Infrastructure/BG.Invoice.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BG.Invoice.IntegrationTests/BG.Invoice.IntegrationTests.csproj" />
+    <Project Path="tests/BG.Invoice.UnitTests/BG.Invoice.UnitTests.csproj" />
+  </Folder>
+</Solution>
