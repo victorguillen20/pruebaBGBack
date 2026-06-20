@@ -6,7 +6,7 @@ namespace BG.Invoice.Domain.Entities;
 
 public class Customer : Entity
 {
-    public int Id { get; private set; }
+    public int Id { get; internal set; }
     public string Identification { get; private set; } = default!;
     public string Name { get; private set; } = default!;
     public string? Phone { get; private set; }

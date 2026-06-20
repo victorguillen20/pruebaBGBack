@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using BG.Invoice.Application.Abstractions;
 using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
@@ -13,6 +12,8 @@ namespace BG.Invoice.UnitTests.Services;
 
 public class InvoiceServiceTests
 {
+    private static readonly DateTime FixedNow = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+
     private readonly Mock<IInvoiceRepository> _invoiceRepository = new();
     private readonly Mock<IRepository<Customer>> _customerRepository = new();
     private readonly Mock<IRepository<Product>> _productRepository = new();
@@ -37,22 +38,21 @@ public class InvoiceServiceTests
     private static BG.Invoice.Domain.Entities.Invoice CreateTestInvoice(int id, int number, int customerId, int sellerId)
     {
         var invoice = BG.Invoice.Domain.Entities.Invoice.Create(number, DateTime.UtcNow, customerId, sellerId, InvoiceType.Contado);
-        typeof(BG.Invoice.Domain.Entities.Invoice).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(invoice, id);
-        typeof(BG.Invoice.Domain.Entities.Invoice).GetField("<Date>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(invoice, DateTime.UtcNow);
+        invoice.Id = id;
         return invoice;
     }
 
     private static Customer CreateCustomer(int id)
     {
         var customer = Customer.Create("ID-001", "Test Customer", CustomerType.Persona);
-        typeof(Customer).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(customer, id);
+        customer.Id = id;
         return customer;
     }
 
     private static Product CreateProduct(int id, int stock = 100)
     {
         var product = Product.Create("P001", "Test Product", 22.00m, 1, stock);
-        typeof(Product).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(product, id);
+        product.Id = id;
         return product;
     }
 
@@ -114,7 +114,7 @@ public class InvoiceServiceTests
             .ReturnsAsync(CreateCustomer(10));
         _numberGenerator.Setup(g => g.GenerateNextAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1001);
-        _clock.SetupGet(c => c.UtcNow).Returns(DateTime.UtcNow);
+        _clock.SetupGet(c => c.UtcNow).Returns(FixedNow);
         _productRepository.Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
 
@@ -140,7 +140,7 @@ public class InvoiceServiceTests
             .ReturnsAsync(customer);
         _numberGenerator.Setup(g => g.GenerateNextAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1001);
-        _clock.SetupGet(c => c.UtcNow).Returns(DateTime.UtcNow);
+        _clock.SetupGet(c => c.UtcNow).Returns(FixedNow);
         _productRepository.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
 

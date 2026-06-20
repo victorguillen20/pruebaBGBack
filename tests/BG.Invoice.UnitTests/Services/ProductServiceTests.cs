@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using BG.Invoice.Application.Abstractions;
 using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
@@ -25,7 +24,7 @@ public class ProductServiceTests
     private static Product CreateProduct(int id, string code)
     {
         var product = Product.Create(code, "Test Product", 22.00m, 1, 100);
-        typeof(Product).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(product, id);
+        product.Id = id;
         return product;
     }
 
@@ -34,8 +33,8 @@ public class ProductServiceTests
     {
         var product = CreateProduct(1, "P001");
         var category = Category.Create("Electronics");
-        typeof(Category).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(category, 1);
-        typeof(Product).GetField("<Category>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(product, category);
+        category.Id = 1;
+        product.Category = category;
 
         _repository.Setup(r => r.GetByIdWithCategoryAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);

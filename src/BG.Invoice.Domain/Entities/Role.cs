@@ -4,7 +4,7 @@ namespace BG.Invoice.Domain.Entities;
 
 public class Role : Entity
 {
-    public int Id { get; private set; }
+    public int Id { get; internal set; }
     public string Name { get; private set; } = default!;
     public string? Description { get; private set; }
     public bool IsActive { get; private set; } = true;

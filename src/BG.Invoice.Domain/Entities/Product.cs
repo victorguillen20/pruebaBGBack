@@ -5,7 +5,7 @@ namespace BG.Invoice.Domain.Entities;
 
 public class Product : Entity
 {
-    public int Id { get; private set; }
+    public int Id { get; internal set; }
     public string Code { get; private set; } = default!;
     public string Name { get; private set; } = default!;
     public string? Description { get; private set; }
@@ -15,7 +15,7 @@ public class Product : Entity
     public int CategoryId { get; private set; }
     public bool IsActive { get; private set; } = true;
 
-    public Category Category { get; private set; } = default!;
+    public Category? Category { get; internal set; } = default!;
     public ICollection<InvoiceDetail> InvoiceDetails { get; private set; } = new List<InvoiceDetail>();
 
     private Product() { }

@@ -5,7 +5,7 @@ namespace BG.Invoice.Domain.Entities;
 
 public class Category : Entity
 {
-    public int Id { get; private set; }
+    public int Id { get; internal set; }
     public string Name { get; private set; } = default!;
     public bool IsActive { get; private set; } = true;
 

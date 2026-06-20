@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using BG.Invoice.Application.Abstractions;
 using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
@@ -26,7 +25,7 @@ public class CategoryServiceTests
     private static Category CreateCategory(int id, string name)
     {
         var category = Category.Create(name);
-        typeof(Category).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(category, id);
+        category.Id = id;
         return category;
     }
 

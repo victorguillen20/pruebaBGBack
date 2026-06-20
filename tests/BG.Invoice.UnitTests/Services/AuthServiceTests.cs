@@ -1,4 +1,3 @@
-using System.Reflection;
 using BG.Invoice.Application.Abstractions;
 using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
@@ -31,10 +30,10 @@ public class AuthServiceTests
     private static User CreateUserWithRole(int id, string userName, string roleName)
     {
         var user = User.Create(userName, "test@test.com", "hash", "First", "Last", 1);
-        typeof(User).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(user, id);
+        user.Id = id;
         var role = Role.Create(roleName);
-        typeof(Role).GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(role, 1);
-        typeof(User).GetField("<Role>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(user, role);
+        role.Id = 1;
+        user.Role = role;
         return user;
     }
 
@@ -79,8 +78,7 @@ public class AuthServiceTests
     public async Task LoginAsync_LockedAccount_ThrowsAccountLockedException()
     {
         var user = CreateUserWithRole(1, "admin", "Admin");
-        typeof(User).GetField("<LockoutUntil>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(user, DateTime.UtcNow.AddMinutes(15));
+        user.LockoutUntil = DateTime.UtcNow.AddMinutes(15);
 
         _userRepository.Setup(r => r.GetByUserNameWithRoleAsync("admin", It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
@@ -95,8 +93,7 @@ public class AuthServiceTests
     public async Task LoginAsync_InactiveAccount_ThrowsForbiddenException()
     {
         var user = CreateUserWithRole(1, "inactive", "Vendedor");
-        typeof(User).GetField("<IsActive>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(user, false);
+        user.IsActive = false;
 
         _userRepository.Setup(r => r.GetByUserNameWithRoleAsync("inactive", It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
@@ -111,8 +108,7 @@ public class AuthServiceTests
     public async Task ChangePasswordAsync_ValidRequest_ChangesPassword()
     {
         var user = CreateUserWithRole(1, "admin", "Admin");
-        typeof(User).GetField("<PasswordHash>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(user, "oldhash");
+        user.PasswordHash = "oldhash";
 
         _userRepository.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
