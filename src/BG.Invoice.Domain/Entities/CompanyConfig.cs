@@ -5,7 +5,7 @@ namespace BG.Invoice.Domain.Entities;
 
 public class CompanyConfig : Entity
 {
-    public int Id { get; private set; } = 1;
+    public int Id { get; internal set; } = 1;
     public string CompanyName { get; private set; } = default!;
     public string? Phone { get; private set; }
     public string? Email { get; private set; }

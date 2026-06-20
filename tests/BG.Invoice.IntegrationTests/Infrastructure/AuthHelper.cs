@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using BG.Invoice.Application.Dtos;
 
 namespace BG.Invoice.IntegrationTests.Infrastructure;
@@ -9,7 +10,8 @@ public static class AuthHelper
 {
     internal static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
     };
 
     public static async Task<string> LoginAsAsync(HttpClient client, string userName, string password)

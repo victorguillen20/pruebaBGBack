@@ -47,6 +47,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                     .Options;
                 return new AppDbContext(options);
             });
+
+            services.AddDbContextFactory<AppDbContext>(opt =>
+                opt.UseSqlite(_connection), ServiceLifetime.Singleton);
         });
     }
 
@@ -84,6 +87,29 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         for (var i = 0; i < users.Count; i++)
             users[i].Id = i + 1;
         db.Set<User>().AddRange(users);
+        await db.SaveChangesAsync();
+
+        var categories = seed.GetDefaultCategories();
+        for (var i = 0; i < categories.Count; i++)
+            categories[i].Id = i + 1;
+        db.Set<Category>().AddRange(categories);
+        await db.SaveChangesAsync();
+
+        var products = seed.GetDefaultProducts();
+        for (var i = 0; i < products.Count; i++)
+            products[i].Id = i + 1;
+        db.Set<Product>().AddRange(products);
+        await db.SaveChangesAsync();
+
+        var customers = seed.GetDefaultCustomers();
+        for (var i = 0; i < customers.Count; i++)
+            customers[i].Id = i + 1;
+        db.Set<Customer>().AddRange(customers);
+        await db.SaveChangesAsync();
+
+        var config = seed.GetDefaultCompanyConfig();
+        config.Id = 1;
+        db.Set<CompanyConfig>().Add(config);
         await db.SaveChangesAsync();
     }
 
