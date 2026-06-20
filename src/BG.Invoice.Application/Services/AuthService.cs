@@ -1,4 +1,5 @@
 using BG.Invoice.Application.Abstractions;
+using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
 using BG.Invoice.Application.Validators;
 using BG.Invoice.Domain.Entities;
@@ -11,7 +12,6 @@ namespace BG.Invoice.Application.Services;
 public class AuthService : IAuthService
 {
     private readonly IRepository<User> _userRepository;
-    private readonly IRepository<Role> _roleRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUnitOfWork _unitOfWork;
@@ -19,14 +19,12 @@ public class AuthService : IAuthService
 
     public AuthService(
         IRepository<User> userRepository,
-        IRepository<Role> roleRepository,
         IPasswordHasher passwordHasher,
         IJwtTokenService jwtTokenService,
         IUnitOfWork unitOfWork,
         ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
-        _roleRepository = roleRepository;
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;
         _unitOfWork = unitOfWork;
@@ -43,19 +41,19 @@ public class AuthService : IAuthService
         var users = await _userRepository.ListAsync(u => u.UserName == request.UserName, ct);
         var user = users.FirstOrDefault();
         if (user is null)
-            return Result.Failure<LoginResponse>("Invalid credentials.");
+            throw new UnauthorizedException(Errors.Auth.InvalidCredentials);
 
         if (!user.IsActive)
-            return Result.Failure<LoginResponse>("Account is inactive.");
+            throw new ForbiddenException(Errors.Auth.AccountInactive);
 
         if (user.IsLockedOut(DateTime.UtcNow))
-            return Result.Failure<LoginResponse>("Account is locked. Try again later.");
+            throw new AccountLockedException(Errors.Auth.AccountLocked);
 
         if (!_passwordHasher.Verify(request.Password, user.PasswordHash))
         {
             user.RecordFailedLogin(5, TimeSpan.FromMinutes(15));
             await _unitOfWork.SaveChangesAsync(ct);
-            return Result.Failure<LoginResponse>("Invalid credentials.");
+            throw new UnauthorizedException(Errors.Auth.InvalidCredentials);
         }
 
         user.ResetFailedLogins();
@@ -78,10 +76,10 @@ public class AuthService : IAuthService
 
         var user = await _userRepository.GetByIdAsync(userId, ct);
         if (user is null)
-            return Result.Failure("User not found.");
+            throw new NotFoundException("User", userId);
 
         if (!_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
-            return Result.Failure("Current password is incorrect.");
+            return Result.Failure(Errors.Auth.CurrentPasswordIncorrect);
 
         user.ChangePassword(_passwordHasher.Hash(request.NewPassword));
         await _unitOfWork.SaveChangesAsync(ct);
@@ -97,11 +95,11 @@ public class AuthService : IAuthService
 
         var existing = await _userRepository.ListAsync(u => u.UserName == request.UserName, ct);
         if (existing.Any())
-            return Result.Failure("Username is already taken.");
+            throw new BusinessRuleException(Errors.User.UsernameTaken);
 
         var existingEmail = await _userRepository.ListAsync(u => u.Email == request.Email, ct);
         if (existingEmail.Any())
-            return Result.Failure("Email is already registered.");
+            throw new BusinessRuleException(Errors.User.EmailRegistered);
 
         var hash = _passwordHasher.Hash(request.Password);
         var user = User.Create(request.UserName, request.Email, hash, request.FirstName, request.LastName, request.RoleId);

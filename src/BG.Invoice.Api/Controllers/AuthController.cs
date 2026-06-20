@@ -25,16 +25,12 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.LoginAsync(request, ct);
         if (!result.IsSuccess)
-        {
-            if (result.ErrorMessage is "Account is locked. Try again later.")
-                return Problem(statusCode: StatusCodes.Status423Locked, title: "Account Locked", detail: result.ErrorMessage);
-            return Unauthorized(new ProblemDetails
+            return BadRequest(new ProblemDetails
             {
-                Title = "Invalid Credentials",
-                Detail = result.ErrorMessage,
-                Status = StatusCodes.Status401Unauthorized
+                Title = "Validation Error",
+                Detail = string.Join("; ", result.ValidationErrors),
+                Status = StatusCodes.Status400BadRequest
             });
-        }
         return Ok(result.Value);
     }
 
@@ -44,12 +40,21 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.ChangePasswordAsync(request, _currentUser.UserId, ct);
         if (!result.IsSuccess)
+        {
+            if (result.ValidationErrors.Count > 0)
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Validation Error",
+                    Detail = string.Join("; ", result.ValidationErrors),
+                    Status = StatusCodes.Status400BadRequest
+                });
             return BadRequest(new ProblemDetails
             {
-                Title = "Error",
+                Title = "Bad Request",
                 Detail = result.ErrorMessage,
                 Status = StatusCodes.Status400BadRequest
             });
+        }
         return Ok();
     }
 
@@ -59,21 +64,12 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.RegisterAsync(request, ct);
         if (!result.IsSuccess)
-        {
-            if (result.ValidationErrors.Count > 0)
-                return BadRequest(new ProblemDetails
-                {
-                    Title = "Validation Error",
-                    Detail = string.Join("; ", result.ValidationErrors),
-                    Status = StatusCodes.Status400BadRequest
-                });
-            return Conflict(new ProblemDetails
+            return BadRequest(new ProblemDetails
             {
-                Title = "Conflict",
-                Detail = result.ErrorMessage,
-                Status = StatusCodes.Status409Conflict
+                Title = "Validation Error",
+                Detail = string.Join("; ", result.ValidationErrors),
+                Status = StatusCodes.Status400BadRequest
             });
-        }
         return StatusCode(StatusCodes.Status201Created);
     }
 }

@@ -33,6 +33,21 @@ public class GlobalExceptionMiddleware
             _logger.LogWarning(ex, "Business rule violation");
             await WriteProblemDetailsAsync(context, StatusCodes.Status409Conflict, "Conflict", ex.Message);
         }
+        catch (AccountLockedException ex)
+        {
+            _logger.LogWarning(ex, "Account locked");
+            await WriteProblemDetailsAsync(context, StatusCodes.Status423Locked, "Account Locked", ex.Message);
+        }
+        catch (UnauthorizedException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized");
+            await WriteProblemDetailsAsync(context, StatusCodes.Status401Unauthorized, "Unauthorized", ex.Message);
+        }
+        catch (ForbiddenException ex)
+        {
+            _logger.LogWarning(ex, "Forbidden");
+            await WriteProblemDetailsAsync(context, StatusCodes.Status403Forbidden, "Forbidden", ex.Message);
+        }
         catch (ValidationException ex)
         {
             _logger.LogWarning(ex, "Validation failed");

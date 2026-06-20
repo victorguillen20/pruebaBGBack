@@ -1,4 +1,5 @@
 using BG.Invoice.Application.Abstractions;
+using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
 using BG.Invoice.Application.Mappings;
 using BG.Invoice.Application.Validators;
@@ -26,14 +27,15 @@ public class CustomerService : ICustomerService
     {
         var customer = await _repository.GetByIdAsync(id, ct);
         if (customer is null)
-            return Result.Failure<CustomerResponse>($"Customer with id '{id}' was not found.");
+            throw new NotFoundException("Customer", id);
         var createdAt = DateTime.UtcNow;
         return Result.Success(customer.ToResponse(createdAt));
     }
 
-    public async Task<PagedResult<CustomerResponse>> SearchAsync(string? search, int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResult<CustomerResponse>> SearchAsync(string? search, int page, int pageSize, bool activeOnly = true, CancellationToken ct = default)
     {
         var all = await _repository.ListAsync(c =>
+            (!activeOnly || c.IsActive) &&
             (string.IsNullOrWhiteSpace(search) ||
              c.Name.Contains(search) ||
              c.Identification.Contains(search)), ct);
@@ -51,7 +53,7 @@ public class CustomerService : ICustomerService
 
         var existing = await _repository.ListAsync(c => c.Identification == request.Identification, ct);
         if (existing.Any())
-            return Result.Failure<CustomerResponse>("Identification already exists.");
+            throw new BusinessRuleException(Errors.Customer.IdentificationExists);
 
         var customer = Customer.Create(request.Identification, request.Name, request.Type, request.Phone, request.Email, request.Address, request.CreditLimit);
         await _repository.AddAsync(customer, ct);
@@ -69,7 +71,7 @@ public class CustomerService : ICustomerService
 
         var customer = await _repository.GetByIdAsync(id, ct);
         if (customer is null)
-            return Result.Failure<CustomerResponse>($"Customer with id '{id}' was not found.");
+            throw new NotFoundException("Customer", id);
 
         customer.Update(request.Name, request.Type, request.Phone, request.Email, request.Address, request.CreditLimit);
         _repository.Update(customer);
@@ -82,7 +84,7 @@ public class CustomerService : ICustomerService
     {
         var customer = await _repository.GetByIdAsync(id, ct);
         if (customer is null)
-            return Result.Failure($"Customer with id '{id}' was not found.");
+            throw new NotFoundException("Customer", id);
         customer.Deactivate();
         await _unitOfWork.SaveChangesAsync(ct);
         return Result.Success();
@@ -92,7 +94,7 @@ public class CustomerService : ICustomerService
     {
         var customer = await _repository.GetByIdAsync(id, ct);
         if (customer is null)
-            return Result.Failure($"Customer with id '{id}' was not found.");
+            throw new NotFoundException("Customer", id);
         customer.Activate();
         await _unitOfWork.SaveChangesAsync(ct);
         return Result.Success();

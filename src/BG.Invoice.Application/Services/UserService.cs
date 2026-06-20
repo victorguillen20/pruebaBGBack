@@ -1,4 +1,5 @@
 using BG.Invoice.Application.Abstractions;
+using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
 using BG.Invoice.Application.Mappings;
 using BG.Invoice.Domain.Entities;
@@ -9,13 +10,21 @@ namespace BG.Invoice.Application.Services;
 
 public class UserService : IUserService
 {
+    private const string AdminRoleName = "Admin";
+
     private readonly IRepository<User> _repository;
+    private readonly IRepository<Role> _roleRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(IRepository<User> repository, IUnitOfWork unitOfWork, ILogger<UserService> logger)
+    public UserService(
+        IRepository<User> repository,
+        IRepository<Role> roleRepository,
+        IUnitOfWork unitOfWork,
+        ILogger<UserService> logger)
     {
         _repository = repository;
+        _roleRepository = roleRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -24,7 +33,7 @@ public class UserService : IUserService
     {
         var user = await _repository.GetByIdAsync(id, ct);
         if (user is null)
-            return Result.Failure<UserResponse>($"User with id '{id}' was not found.");
+            throw new NotFoundException("User", id);
         var createdAt = DateTime.UtcNow;
         return Result.Success(user.ToResponse(user.Role?.Name ?? "", createdAt));
     }
@@ -57,7 +66,7 @@ public class UserService : IUserService
     {
         var user = await _repository.GetByIdAsync(id, ct);
         if (user is null)
-            return Result.Failure<UserResponse>($"User with id '{id}' was not found.");
+            throw new NotFoundException("User", id);
 
         user.UpdateProfile(request.FirstName, request.LastName, request.RoleId, request.IsActive);
         _repository.Update(user);
@@ -71,7 +80,10 @@ public class UserService : IUserService
     {
         var user = await _repository.GetByIdAsync(id, ct);
         if (user is null)
-            return Result.Failure($"User with id '{id}' was not found.");
+            throw new NotFoundException("User", id);
+
+        await EnsureNotLastActiveAdminAsync(user, ct);
+
         user.Deactivate();
         await _unitOfWork.SaveChangesAsync(ct);
         return Result.Success();
@@ -81,9 +93,25 @@ public class UserService : IUserService
     {
         var user = await _repository.GetByIdAsync(id, ct);
         if (user is null)
-            return Result.Failure($"User with id '{id}' was not found.");
+            throw new NotFoundException("User", id);
         user.Activate();
         await _unitOfWork.SaveChangesAsync(ct);
         return Result.Success();
+    }
+
+    private async Task EnsureNotLastActiveAdminAsync(User user, CancellationToken ct)
+    {
+        var adminRoles = await _roleRepository.ListAsync(r => r.Name == AdminRoleName, ct);
+        if (adminRoles.Count is 0)
+            return;
+
+        var adminRoleId = adminRoles[0].Id;
+        if (user.RoleId != adminRoleId || !user.IsActive)
+            return;
+
+        var otherAdmins = await _repository.ListAsync(
+            u => u.IsActive && u.RoleId == adminRoleId && u.Id != user.Id, ct);
+        if (otherAdmins.Count is 0)
+            throw new BusinessRuleException(Errors.User.LastActiveAdmin);
     }
 }

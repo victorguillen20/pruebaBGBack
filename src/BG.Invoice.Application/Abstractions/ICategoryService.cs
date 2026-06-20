@@ -9,4 +9,5 @@ public interface ICategoryService
     Task<Result<CategoryResponse>> CreateAsync(CreateCategoryRequest request, CancellationToken ct = default);
     Task<Result<CategoryResponse>> UpdateAsync(int id, UpdateCategoryRequest request, CancellationToken ct = default);
     Task<Result> DeactivateAsync(int id, CancellationToken ct = default);
+    Task<Result> ActivateAsync(int id, CancellationToken ct = default);
 }

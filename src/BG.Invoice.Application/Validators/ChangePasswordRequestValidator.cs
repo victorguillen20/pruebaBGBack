@@ -1,3 +1,4 @@
+using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
 using FluentValidation;
 
@@ -8,7 +9,7 @@ public class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRe
     public ChangePasswordRequestValidator()
     {
         RuleFor(x => x.CurrentPassword).NotEmpty();
-        RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(6).MaximumLength(100);
-        RuleFor(x => x.ConfirmPassword).Equal(x => x.NewPassword).WithMessage("Passwords do not match.");
+        RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(8);
+        RuleFor(x => x.ConfirmPassword).Equal(x => x.NewPassword).WithMessage(Errors.Validation.PasswordsDoNotMatch);
     }
 }

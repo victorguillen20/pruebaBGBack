@@ -27,7 +27,7 @@ public class CompanyConfigService : ICompanyConfigService
         var all = await _repository.ListAsync(ct: ct);
         var config = all.FirstOrDefault();
         if (config is null)
-            return Result.Failure<CompanyConfigResponse>("Company configuration not found.");
+            throw new NotFoundException("CompanyConfig", "singleton");
         return Result.Success(config.ToResponse());
     }
 
@@ -41,7 +41,7 @@ public class CompanyConfigService : ICompanyConfigService
         var all = await _repository.ListAsync(ct: ct);
         var config = all.FirstOrDefault();
         if (config is null)
-            return Result.Failure<CompanyConfigResponse>("Company configuration not found.");
+            throw new NotFoundException("CompanyConfig", "singleton");
 
         config.Update(request.CompanyName, request.TaxPercent, request.CurrencySymbol,
             request.Phone, request.Email, request.TaxId,

@@ -1,4 +1,5 @@
 using BG.Invoice.Application.Abstractions;
+using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
 using BG.Invoice.Application.Mappings;
 using BG.Invoice.Application.Validators;
@@ -12,12 +13,18 @@ namespace BG.Invoice.Application.Services;
 public class CategoryService : ICategoryService
 {
     private readonly IRepository<Category> _repository;
+    private readonly IRepository<Product> _productRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CategoryService> _logger;
 
-    public CategoryService(IRepository<Category> repository, IUnitOfWork unitOfWork, ILogger<CategoryService> logger)
+    public CategoryService(
+        IRepository<Category> repository,
+        IRepository<Product> productRepository,
+        IUnitOfWork unitOfWork,
+        ILogger<CategoryService> logger)
     {
         _repository = repository;
+        _productRepository = productRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -26,7 +33,7 @@ public class CategoryService : ICategoryService
     {
         var category = await _repository.GetByIdAsync(id, ct);
         if (category is null)
-            return Result.Failure<CategoryResponse>($"Category with id '{id}' was not found.");
+            throw new NotFoundException("Category", id);
         var createdAt = DateTime.UtcNow;
         return Result.Success(category.ToResponse(createdAt));
     }
@@ -50,7 +57,7 @@ public class CategoryService : ICategoryService
 
         var existing = await _repository.ListAsync(c => c.Name == request.Name, ct);
         if (existing.Any())
-            return Result.Failure<CategoryResponse>("Category name already exists.");
+            throw new BusinessRuleException(Errors.Category.NameExists);
 
         var category = Category.Create(request.Name);
         await _repository.AddAsync(category, ct);
@@ -68,7 +75,7 @@ public class CategoryService : ICategoryService
 
         var category = await _repository.GetByIdAsync(id, ct);
         if (category is null)
-            return Result.Failure<CategoryResponse>($"Category with id '{id}' was not found.");
+            throw new NotFoundException("Category", id);
 
         category.Update(request.Name);
         _repository.Update(category);
@@ -81,8 +88,23 @@ public class CategoryService : ICategoryService
     {
         var category = await _repository.GetByIdAsync(id, ct);
         if (category is null)
-            return Result.Failure($"Category with id '{id}' was not found.");
+            throw new NotFoundException("Category", id);
+
+        var activeProducts = await _productRepository.ListAsync(p => p.CategoryId == id && p.IsActive, ct);
+        if (activeProducts.Count > 0)
+            throw new BusinessRuleException(Errors.Category.HasActiveProducts(activeProducts.Count));
+
         category.Deactivate();
+        await _unitOfWork.SaveChangesAsync(ct);
+        return Result.Success();
+    }
+
+    public async Task<Result> ActivateAsync(int id, CancellationToken ct = default)
+    {
+        var category = await _repository.GetByIdAsync(id, ct);
+        if (category is null)
+            throw new NotFoundException("Category", id);
+        category.Activate();
         await _unitOfWork.SaveChangesAsync(ct);
         return Result.Success();
     }

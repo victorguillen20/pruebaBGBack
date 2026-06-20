@@ -1,4 +1,5 @@
 using BG.Invoice.Application.Abstractions;
+using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
 using BG.Invoice.Application.Mappings;
 using BG.Invoice.Application.Validators;
@@ -42,10 +43,10 @@ public class InvoiceService : IInvoiceService
     {
         var invoice = await _invoiceRepository.GetByIdAsync(id, ct);
         if (invoice is null)
-            return Result.Failure<InvoiceResponse>($"Invoice with id '{id}' was not found.");
+            throw new NotFoundException("Invoice", id);
 
         if (!isAdmin && invoice.SellerId != requestingUserId)
-            return Result.Failure<InvoiceResponse>("Access denied.");
+            throw new ForbiddenException(Errors.Invoice.AccessDenied);
 
         var createdAt = DateTime.UtcNow;
         return Result.Success(invoice.ToResponse(createdAt));
@@ -85,10 +86,10 @@ public class InvoiceService : IInvoiceService
 
         var customer = await _customerRepository.GetByIdAsync(request.CustomerId, ct);
         if (customer is null)
-            return Result.Failure<InvoiceResponse>("Customer not found.");
+            throw new NotFoundException("Customer", request.CustomerId);
 
         if (request.Type == InvoiceType.Credito && !request.DueDate.HasValue)
-            return Result.Failure<InvoiceResponse>("Credit invoices require a due date.");
+            throw new BusinessRuleException(Errors.Invoice.CreditRequiresDueDate);
 
         var number = await _numberGenerator.GenerateNextAsync(ct);
 
@@ -99,13 +100,13 @@ public class InvoiceService : IInvoiceService
         {
             var product = await _productRepository.GetByIdAsync(detailRequest.ProductId, ct);
             if (product is null)
-                return Result.Failure<InvoiceResponse>($"Product with id '{detailRequest.ProductId}' not found.");
+                throw new NotFoundException("Product", detailRequest.ProductId);
 
             if (!product.IsActive)
-                return Result.Failure<InvoiceResponse>($"Product '{product.Name}' is inactive.");
+                throw new BusinessRuleException(string.Format(Errors.Invoice.ProductInactive, product.Name));
 
             if (product.Stock < detailRequest.Quantity)
-                return Result.Failure<InvoiceResponse>($"Insufficient stock for product '{product.Code}'. Available: {product.Stock}, requested: {detailRequest.Quantity}.");
+                throw new BusinessRuleException(Errors.Invoice.InsufficientStock(product.Code, product.Stock, detailRequest.Quantity));
 
             product.DecrementStock(detailRequest.Quantity);
             invoice.AddDetail(detailRequest.ProductId, detailRequest.Quantity, detailRequest.UnitPrice, detailRequest.ProductName, detailRequest.ProductCode);
@@ -125,10 +126,10 @@ public class InvoiceService : IInvoiceService
     {
         var invoice = await _invoiceRepository.GetByIdAsync(id, ct);
         if (invoice is null)
-            return Result.Failure($"Invoice with id '{id}' was not found.");
+            throw new NotFoundException("Invoice", id);
 
         if (invoice.Status == InvoiceStatus.Anulada)
-            return Result.Failure("Invoice is already cancelled.");
+            throw new BusinessRuleException(Errors.Invoice.AlreadyCancelled);
 
         invoice.Cancel();
         await _unitOfWork.SaveChangesAsync(ct);
@@ -144,7 +145,7 @@ public class InvoiceService : IInvoiceService
 
         var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, ct);
         if (invoice is null)
-            return Result.Failure($"Invoice with id '{invoiceId}' was not found.");
+            throw new NotFoundException("Invoice", invoiceId);
 
         var paymentDate = request.PaymentDate ?? _clock.UtcNow;
         invoice.AddPayment(request.Method, request.Amount, request.Reference, paymentDate);

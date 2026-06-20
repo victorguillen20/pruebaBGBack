@@ -1,4 +1,5 @@
 using BG.Invoice.Application.Abstractions;
+using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
 using BG.Invoice.Application.Mappings;
 using BG.Invoice.Application.Validators;
@@ -26,7 +27,7 @@ public class ProductService : IProductService
     {
         var product = await _repository.GetByIdAsync(id, ct);
         if (product is null)
-            return Result.Failure<ProductResponse>($"Product with id '{id}' was not found.");
+            throw new NotFoundException("Product", id);
         var createdAt = DateTime.UtcNow;
         return Result.Success(product.ToResponse(product.Category?.Name ?? "", createdAt));
     }
@@ -51,7 +52,7 @@ public class ProductService : IProductService
 
         var existing = await _repository.ListAsync(p => p.Code == request.Code, ct);
         if (existing.Any())
-            return Result.Failure<ProductResponse>("Product code already exists.");
+            throw new BusinessRuleException(Errors.Product.CodeExists);
 
         var product = Product.Create(request.Code, request.Name, request.Price, request.CategoryId, request.Stock, request.Cost, request.Description);
         await _repository.AddAsync(product, ct);
@@ -69,7 +70,7 @@ public class ProductService : IProductService
 
         var product = await _repository.GetByIdAsync(id, ct);
         if (product is null)
-            return Result.Failure<ProductResponse>($"Product with id '{id}' was not found.");
+            throw new NotFoundException("Product", id);
 
         product.Update(request.Name, request.Price, request.CategoryId, request.Cost, request.Description);
         _repository.Update(product);
@@ -82,7 +83,7 @@ public class ProductService : IProductService
     {
         var product = await _repository.GetByIdAsync(id, ct);
         if (product is null)
-            return Result.Failure($"Product with id '{id}' was not found.");
+            throw new NotFoundException("Product", id);
         product.Deactivate();
         await _unitOfWork.SaveChangesAsync(ct);
         return Result.Success();
@@ -92,7 +93,7 @@ public class ProductService : IProductService
     {
         var product = await _repository.GetByIdAsync(id, ct);
         if (product is null)
-            return Result.Failure($"Product with id '{id}' was not found.");
+            throw new NotFoundException("Product", id);
         product.Activate();
         await _unitOfWork.SaveChangesAsync(ct);
         return Result.Success();

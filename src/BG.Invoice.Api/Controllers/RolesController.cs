@@ -1,6 +1,5 @@
 using BG.Invoice.Api.Configuration;
 using BG.Invoice.Application.Abstractions;
-using BG.Invoice.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,20 +10,17 @@ namespace BG.Invoice.Api.Controllers;
 [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public class RolesController : ControllerBase
 {
-    private readonly IRepository<Role> _roleRepository;
+    private readonly IRoleService _roleService;
 
-    public RolesController(IRepository<Role> roleRepository)
+    public RolesController(IRoleService roleService)
     {
-        _roleRepository = roleRepository;
+        _roleService = roleService;
     }
 
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken ct)
     {
-        var roles = await _roleRepository.ListAsync(r => r.IsActive, ct);
-        var response = roles.Select(r => new RoleResponse(r.Id, r.Name, r.Description)).ToList();
-        return Ok(response);
+        var roles = await _roleService.ListAsync(ct);
+        return Ok(roles);
     }
 }
-
-public record RoleResponse(int Id, string Name, string? Description);
