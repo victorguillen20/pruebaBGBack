@@ -1,4 +1,5 @@
 using System.Data;
+using BG.Invoice.Application.Abstractions;
 using BG.Invoice.Domain.Enums;
 namespace BG.Invoice.Infrastructure.Persistence.Repositories;
 public class InvoiceRepository : Repository<global::BG.Invoice.Domain.Entities.Invoice>, IInvoiceRepository
@@ -31,7 +32,10 @@ public class InvoiceRepository : Repository<global::BG.Invoice.Domain.Entities.I
         DateTime? fromDate, DateTime? toDate, decimal? minTotal, decimal? maxTotal,
         int page, int pageSize, CancellationToken ct = default)
     {
-        var query = DbSet.AsNoTracking().AsQueryable();
+        var query = DbSet.AsNoTracking()
+            .Include(i => i.Customer)
+            .Include(i => i.Seller)
+            .AsQueryable();
         if (customerId.HasValue) query = query.Where(i => i.CustomerId == customerId);
         if (sellerId.HasValue) query = query.Where(i => i.SellerId == sellerId);
         if (status.HasValue) query = query.Where(i => i.Status == status);
@@ -56,6 +60,7 @@ public class InvoiceRepository : Repository<global::BG.Invoice.Domain.Entities.I
     public async Task<IReadOnlyList<global::BG.Invoice.Domain.Entities.Invoice>> GetRecentAsync(int count, CancellationToken ct = default)
         => await DbSet.AsNoTracking()
             .Include(i => i.Customer)
+            .Include(i => i.Seller)
             .OrderByDescending(i => i.Date).ThenByDescending(i => i.Number)
             .Take(count)
             .ToListAsync(ct);
@@ -70,18 +75,27 @@ public class InvoiceRepository : Repository<global::BG.Invoice.Domain.Entities.I
             .ToListAsync(ct);
         return sales.ToDictionary(s => s.Month, s => s.Total);
     }
-    public async Task<IReadOnlyList<(int ProductId, string ProductName, int QuantitySold)>> GetTopProductsAsync(int count, CancellationToken ct = default)
+    public async Task<IReadOnlyList<global::BG.Invoice.Domain.Entities.TopProductRow>> GetTopProductsAsync(int count, CancellationToken ct = default)
     {
         var fromDate = DateTime.UtcNow.AddYears(-1);
         var top = await DbSet.AsNoTracking()
             .Where(i => i.Date >= fromDate && i.Status != InvoiceStatus.Anulada)
             .SelectMany(i => i.Details)
             .GroupBy(d => d.ProductId)
-            .Select(g => new { ProductId = g.Key, QuantitySold = g.Sum(d => d.Quantity) })
-            .OrderByDescending(x => x.QuantitySold)
+            .Select(g => new
+            {
+                ProductId = g.Key,
+                ProductCode = g.First().ProductCodeSnapshot,
+                ProductName = g.First().ProductNameSnapshot,
+                TotalQuantitySold = g.Sum(d => d.Quantity),
+                TotalRevenue = g.Sum(d => d.LineTotal)
+            })
+            .OrderByDescending(x => x.TotalRevenue)
             .Take(count)
-            .Join(Context.Set<Product>().IgnoreQueryFilters(), x => x.ProductId, p => p.Id, (x, p) => new { x.ProductId, p.Name, x.QuantitySold })
             .ToListAsync(ct);
-        return top.Select(t => (t.ProductId, t.Name, t.QuantitySold)).ToList();
+        return top
+            .Select(t => new global::BG.Invoice.Domain.Entities.TopProductRow(
+                t.ProductId, t.ProductCode, t.ProductName, t.TotalQuantitySold, t.TotalRevenue))
+            .ToList();
     }
 }

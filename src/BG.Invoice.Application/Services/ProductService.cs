@@ -12,11 +12,14 @@ namespace BG.Invoice.Application.Services;
 
 public class ProductService : IProductService
 {
-    private readonly IRepository<Product> _repository;
+    private readonly IProductRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ProductService> _logger;
 
-    public ProductService(IRepository<Product> repository, IUnitOfWork unitOfWork, ILogger<ProductService> logger)
+    public ProductService(
+        IProductRepository repository,
+        IUnitOfWork unitOfWork,
+        ILogger<ProductService> logger)
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
@@ -25,7 +28,7 @@ public class ProductService : IProductService
 
     public async Task<Result<ProductResponse>> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var product = await _repository.GetByIdAsync(id, ct);
+        var product = await _repository.GetByIdWithCategoryAsync(id, ct);
         if (product is null)
             throw new NotFoundException("Product", id);
         var createdAt = DateTime.UtcNow;
@@ -34,13 +37,11 @@ public class ProductService : IProductService
 
     public async Task<PagedResult<ProductResponse>> SearchAsync(string? search, int? categoryId, int page, int pageSize, CancellationToken ct = default)
     {
-        var all = await _repository.ListAsync(p =>
-            p.IsActive &&
-            (!categoryId.HasValue || p.CategoryId == categoryId) &&
-            (string.IsNullOrWhiteSpace(search) || p.Name.Contains(search) || p.Code.Contains(search)), ct);
-        var total = all.Count;
-        var items = all.Skip((page - 1) * pageSize).Take(pageSize).Select(p => p.ToResponse(p.Category?.Name ?? "", DateTime.UtcNow)).ToList();
-        return new PagedResult<ProductResponse> { Items = items, Total = total, Page = page, PageSize = pageSize };
+        var (items, total) = await _repository.SearchPagedWithCategoryAsync(search, categoryId, page, pageSize, activeOnly: true, ct);
+        var responses = items
+            .Select(p => p.ToResponse(p.Category?.Name ?? "", DateTime.UtcNow))
+            .ToList();
+        return new PagedResult<ProductResponse> { Items = responses, Total = total, Page = page, PageSize = pageSize };
     }
 
     public async Task<Result<ProductResponse>> CreateAsync(CreateProductRequest request, CancellationToken ct = default)

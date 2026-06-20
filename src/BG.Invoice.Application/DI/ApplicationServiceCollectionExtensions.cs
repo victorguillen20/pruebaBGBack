@@ -19,6 +19,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<ICompanyConfigService, CompanyConfigService>();
         services.AddScoped<IMenuService, MenuService>();
+        services.AddScoped<IDashboardService, DashboardService>();
 
         return services;
     }

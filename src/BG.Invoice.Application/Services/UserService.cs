@@ -12,13 +12,13 @@ public class UserService : IUserService
 {
     private const string AdminRoleName = "Admin";
 
-    private readonly IRepository<User> _repository;
+    private readonly IUserRepository _repository;
     private readonly IRepository<Role> _roleRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UserService> _logger;
 
     public UserService(
-        IRepository<User> repository,
+        IUserRepository repository,
         IRepository<Role> roleRepository,
         IUnitOfWork unitOfWork,
         ILogger<UserService> logger)
@@ -31,7 +31,7 @@ public class UserService : IUserService
 
     public async Task<Result<UserResponse>> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var user = await _repository.GetByIdAsync(id, ct);
+        var user = await _repository.GetByIdWithRoleAsync(id, ct);
         if (user is null)
             throw new NotFoundException("User", id);
         var createdAt = DateTime.UtcNow;
@@ -40,16 +40,11 @@ public class UserService : IUserService
 
     public async Task<PagedResult<UserResponse>> SearchAsync(string? search, int? roleId, int page, int pageSize, bool activeOnly = true, CancellationToken ct = default)
     {
-        var all = await _repository.ListAsync(u =>
-            (!activeOnly || u.IsActive) &&
-            (!roleId.HasValue || u.RoleId == roleId) &&
-            (string.IsNullOrWhiteSpace(search) ||
-             u.UserName.Contains(search) || u.Email.Contains(search) ||
-             u.FirstName.Contains(search) || u.LastName.Contains(search)), ct);
-        var total = all.Count;
-        var items = all.Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(u => u.ToResponse(u.Role?.Name ?? "", DateTime.UtcNow)).ToList();
-        return new PagedResult<UserResponse> { Items = items, Total = total, Page = page, PageSize = pageSize };
+        var (items, total) = await _repository.SearchPagedAsync(search, roleId, page, pageSize, activeOnly, ct);
+        var responses = items
+            .Select(u => u.ToResponse(u.Role?.Name ?? "", DateTime.UtcNow))
+            .ToList();
+        return new PagedResult<UserResponse> { Items = responses, Total = total, Page = page, PageSize = pageSize };
     }
 
     public async Task<Result<UserResponse>> CreateAsync(CreateUserRequest request, CancellationToken ct = default)

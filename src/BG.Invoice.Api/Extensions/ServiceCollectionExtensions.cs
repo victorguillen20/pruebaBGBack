@@ -3,6 +3,7 @@ using BG.Invoice.Api.Auth;
 using BG.Invoice.Api.Configuration;
 using BG.Invoice.Api.Filters;
 using BG.Invoice.Api.HealthChecks;
+using BG.Invoice.Api.HostedServices;
 using BG.Invoice.Application.Abstractions;
 
 namespace BG.Invoice.Api.Extensions;
@@ -12,6 +13,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<ICurrentUser, CurrentUserService>();
+        services.AddHostedService<SeedHostedService>();
 
         services.AddProblemDetails();
 

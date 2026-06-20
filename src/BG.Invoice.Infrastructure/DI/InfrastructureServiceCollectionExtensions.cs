@@ -44,6 +44,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IClock, SystemClock>();
         services.AddScoped<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
+        services.AddSingleton<ISeedDataProvider, SeedDataProvider>();
 
         return services;
     }

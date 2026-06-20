@@ -11,14 +11,14 @@ namespace BG.Invoice.Application.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly IRepository<User> _userRepository;
+    private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
-        IRepository<User> userRepository,
+        IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IJwtTokenService jwtTokenService,
         IUnitOfWork unitOfWork,
@@ -38,8 +38,7 @@ public class AuthService : IAuthService
         if (!validationResult.IsValid)
             return Result.ValidationError<LoginResponse>(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
 
-        var users = await _userRepository.ListAsync(u => u.UserName == request.UserName, ct);
-        var user = users.FirstOrDefault();
+        var user = await _userRepository.GetByUserNameWithRoleAsync(request.UserName, ct);
         if (user is null)
             throw new UnauthorizedException(Errors.Auth.InvalidCredentials);
 

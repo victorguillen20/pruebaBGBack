@@ -1,3 +1,4 @@
+using BG.Invoice.Application.Common;
 using BG.Invoice.Application.Dtos;
 using FluentValidation;
 
@@ -8,7 +9,7 @@ public class CreateInvoiceValidator : AbstractValidator<CreateInvoiceRequest>
     public CreateInvoiceValidator()
     {
         RuleFor(x => x.CustomerId).GreaterThan(0);
-        RuleFor(x => x.Details).NotEmpty().WithMessage("Invoice must have at least one detail.");
+        RuleFor(x => x.Details).NotEmpty().WithMessage(Errors.Validation.InvoiceDetailsRequired);
         RuleForEach(x => x.Details).ChildRules(detail =>
         {
             detail.RuleFor(d => d.ProductId).GreaterThan(0);

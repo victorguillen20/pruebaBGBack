@@ -13,7 +13,7 @@ namespace BG.Invoice.Application.Services;
 
 public class InvoiceService : IInvoiceService
 {
-    private readonly IRepository<Domain.Entities.Invoice> _invoiceRepository;
+    private readonly IInvoiceRepository _invoiceRepository;
     private readonly IRepository<Customer> _customerRepository;
     private readonly IRepository<Product> _productRepository;
     private readonly IInvoiceNumberGenerator _numberGenerator;
@@ -22,7 +22,7 @@ public class InvoiceService : IInvoiceService
     private readonly ILogger<InvoiceService> _logger;
 
     public InvoiceService(
-        IRepository<Domain.Entities.Invoice> invoiceRepository,
+        IInvoiceRepository invoiceRepository,
         IRepository<Customer> customerRepository,
         IRepository<Product> productRepository,
         IInvoiceNumberGenerator numberGenerator,
@@ -41,7 +41,7 @@ public class InvoiceService : IInvoiceService
 
     public async Task<Result<InvoiceResponse>> GetByIdAsync(int id, int requestingUserId, bool isAdmin, CancellationToken ct = default)
     {
-        var invoice = await _invoiceRepository.GetByIdAsync(id, ct);
+        var invoice = await _invoiceRepository.GetByIdWithDetailsAsync(id, ct);
         if (invoice is null)
             throw new NotFoundException("Invoice", id);
 
@@ -54,26 +54,17 @@ public class InvoiceService : IInvoiceService
 
     public async Task<PagedResult<InvoiceSummaryResponse>> SearchAsync(InvoiceSearchCriteria criteria, int requestingUserId, bool isAdmin, CancellationToken ct = default)
     {
-        var all = await _invoiceRepository.ListAsync(i =>
-            (!criteria.CustomerId.HasValue || i.CustomerId == criteria.CustomerId) &&
-            (!isAdmin && criteria.SellerId.HasValue || i.SellerId == requestingUserId || isAdmin) &&
-            (!criteria.Status.HasValue || i.Status == criteria.Status) &&
-            (!criteria.FromDate.HasValue || i.Date >= criteria.FromDate) &&
-            (!criteria.ToDate.HasValue || i.Date <= criteria.ToDate) &&
-            (!criteria.MinTotal.HasValue || i.Total >= criteria.MinTotal) &&
-            (!criteria.MaxTotal.HasValue || i.Total <= criteria.MaxTotal), ct);
+        var effectiveSellerId = isAdmin ? criteria.SellerId : requestingUserId;
 
-        var total = all.Count;
-        var items = all
-            .OrderByDescending(i => i.Date)
-            .Skip((criteria.Page - 1) * criteria.PageSize)
-            .Take(criteria.PageSize)
-            .Select(i => i.ToSummaryResponse())
-            .ToList();
+        var (items, total) = await _invoiceRepository.SearchPagedAsync(
+            criteria.Search, criteria.CustomerId, effectiveSellerId, criteria.Status,
+            criteria.FromDate, criteria.ToDate, criteria.MinTotal, criteria.MaxTotal,
+            criteria.Page, criteria.PageSize, ct);
 
+        var summaries = items.Select(i => i.ToSummaryResponse()).ToList();
         return new PagedResult<InvoiceSummaryResponse>
         {
-            Items = items, Total = total, Page = criteria.Page, PageSize = criteria.PageSize
+            Items = summaries, Total = total, Page = criteria.Page, PageSize = criteria.PageSize
         };
     }
 
