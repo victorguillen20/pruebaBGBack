@@ -33,3 +33,8 @@ TestResults/
 *.tmp
 .DS_Store
 Thumbs.db
+
+# dotnet run output redirects (avoid leaking local paths on public repos)
+api_*.txt
+msbuild.log
+*.binlog

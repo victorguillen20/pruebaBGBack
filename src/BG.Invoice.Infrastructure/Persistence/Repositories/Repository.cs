@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 namespace BG.Invoice.Infrastructure.Persistence.Repositories;
-public class Repository<T> : IRepository<T> where T : class, IAuditable
+public class Repository<T> : IRepository<T>, global::BG.Invoice.Application.Abstractions.IRepository<T> where T : class, IAuditable
 {
     protected AppDbContext Context { get; }
     protected DbSet<T> DbSet { get; }

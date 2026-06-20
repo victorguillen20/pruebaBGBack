@@ -1,6 +1,6 @@
 namespace BG.Invoice.Infrastructure.Persistence.Repositories;
-public interface IUnitOfWork
+public interface IUnitOfWork : global::BG.Invoice.Application.Abstractions.IUnitOfWork
 {
-    Task<int> SaveChangesAsync(CancellationToken ct = default);
+    new Task<int> SaveChangesAsync(CancellationToken ct = default);
     Task<bool> SaveChangesWithAuditAsync(CancellationToken ct = default);
 }
