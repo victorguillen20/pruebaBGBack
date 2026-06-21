@@ -1,0 +1,697 @@
+{
+  "info": {
+    "name": "BG Invoice API",
+    "description": "API de facturación BG Invoice. Construida con .NET 10, Clean Architecture y SQLite.\n\nAutenticación: Bearer JWT. Login en POST /api/auth/login devuelve un token de 60 minutos.\n\nRoles:\n- Admin: acceso completo a usuarios, roles, categorías, productos, clientes, facturas y configuración.\n- Vendedor: dashboard, facturas propias, clientes (solo lectura/creación/edición), productos (solo lectura).\n- Sin autenticación: solo /health y Swagger.\n\nBase URL (dev): https://localhost:5001\nCredenciales por defecto: admin / Admin123!",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Auth",
+      "description": "Endpoints de autenticación. El login extrae el token JWT y lo guarda en la variable de entorno {{token}} para usarlo en el resto de peticiones.",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Inicia sesión con credenciales y devuelve un token JWT. Las respuestas incluyen datos del usuario y rol. Usa {{adminUsername}} / {{adminPassword}} por defecto."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.environment.set(\"token\", json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Admin123!\",\n  \"newPassword\": \"NewPass123!\",\n  \"confirmPassword\": \"NewPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "change-password"]
+            },
+            "description": "Cambia la contraseña del usuario autenticado. Requiere contraseña actual, nueva y confirmación."
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"newvendor\",\n  \"email\": \"vendor3@bg.com\",\n  \"password\": \"Pass123!\",\n  \"confirmPassword\": \"Pass123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"roleId\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Registra un nuevo usuario. Solo admin. Devuelve 201 Created."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Me",
+      "description": "Información del usuario autenticado.",
+      "item": [
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "me"]
+            },
+            "description": "Devuelve los datos del usuario autenticado y sus menús disponibles."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Users (Admin)",
+      "description": "Gestión de usuarios. Solo accesible por administradores.",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/users?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "roleId", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Lista paginada de usuarios. Filtro opcional por búsqueda (search) y rol (roleId). Solo admin."
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            },
+            "description": "Obtiene un usuario por su ID. Solo admin."
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"newuser\",\n  \"email\": \"new@bg.com\",\n  \"password\": \"Pass123!\",\n  \"confirmPassword\": \"Pass123!\",\n  \"firstName\": \"First\",\n  \"lastName\": \"Last\",\n  \"roleId\": 2,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Crea un nuevo usuario. Asignar roleId=1 (Admin) o roleId=2 (Vendedor). Solo admin."
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"Name\",\n  \"roleId\": 1,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            },
+            "description": "Actualiza los datos de un usuario existente. Solo admin."
+          }
+        },
+        {
+          "name": "Deactivate User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            },
+            "description": "Desactiva (soft delete) un usuario. No se puede desactivar el último administrador activo. Devuelve 409 en ese caso. Solo admin."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Roles",
+      "description": "Listado de roles del sistema.",
+      "item": [
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "roles"]
+            },
+            "description": "Devuelve todos los roles activos. Solo admin."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Menus",
+      "description": "Menús disponibles según el rol del usuario autenticado.",
+      "item": [
+        {
+          "name": "Get My Menus",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/me/menus",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "me", "menus"]
+            },
+            "description": "Devuelve los menús accesibles para el rol del usuario autenticado. Admin: 6 menús. Vendedor: 4 menús."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Customers",
+      "description": "Gestión de clientes. Admin y Vendedor pueden leer, crear y editar. Solo admin puede eliminar.",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/customers?page=1&pageSize=10&activeOnly=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "activeOnly", "value": "true" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Lista paginada de clientes. Filtro opcional por búsqueda (search). Accesible por admin y vendedor."
+          }
+        },
+        {
+          "name": "Get Customer by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers", "1"]
+            },
+            "description": "Obtiene un cliente por su ID. Incluye datos completos del cliente."
+          }
+        },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identification\": \"001-9999999-9\",\n  \"name\": \"Test Customer\",\n  \"type\": 0,\n  \"phone\": \"555-9999\",\n  \"email\": \"test@bg.com\",\n  \"address\": \"Test Address\",\n  \"creditLimit\": 10000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers"]
+            },
+            "description": "Crea un nuevo cliente. type: 0=Persona, 1=Empresa. Si la identificación ya existe devuelve 409."
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Customer\",\n  \"type\": 1,\n  \"phone\": \"555-0000\",\n  \"email\": \"updated@bg.com\",\n  \"address\": \"Updated Address\",\n  \"creditLimit\": 20000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers", "1"]
+            },
+            "description": "Actualiza los datos de un cliente existente. No se puede modificar la identificación."
+          }
+        },
+        {
+          "name": "Deactivate Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers", "1"]
+            },
+            "description": "Desactiva (soft delete) un cliente. Solo admin. Si el cliente tiene facturas asociadas no se puede eliminar."
+          }
+        },
+        {
+          "name": "Activate Customer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/1/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers", "1", "activate"]
+            },
+            "description": "Reactiva un cliente desactivado. Solo admin. Devuelve 204 NoContent."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Categories",
+      "description": "Gestión de categorías de productos. Solo admin puede crear, editar y eliminar.",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categories"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Lista paginada de categorías. Filtro opcional por búsqueda (search). Accesible por admin y vendedor."
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"NewCategory\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Crea una nueva categoría. Si el nombre ya existe devuelve 409. Solo admin."
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"UpdatedCategory\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categories", "1"]
+            },
+            "description": "Actualiza el nombre de una categoría existente. Solo admin."
+          }
+        },
+        {
+          "name": "Deactivate Category",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categories", "1"]
+            },
+            "description": "Desactiva una categoría. Devuelve 409 si hay productos activos asociados. Solo admin."
+          }
+        },
+        {
+          "name": "Activate Category",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/1/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categories", "1", "activate"]
+            },
+            "description": "Reactiva una categoría desactivada. Solo admin. Devuelve 204 NoContent."
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Products",
+      "description": "Gestión de productos. Admin puede crear, editar y eliminar. Vendedor puede leer.",
+      "item": [
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/products?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "categoryId", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "onlyActive", "value": "true", "disabled": true }
+              ]
+            },
+            "description": "Lista paginada de productos. Filtros opcionales: categoryId, search, onlyActive. Accesible por admin y vendedor."
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "1"]
+            },
+            "description": "Obtiene un producto por su ID. Incluye nombre de categoría."
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"BE-NUEVO-001\",\n  \"name\": \"Café Molido Premium 500g\",\n  \"price\": 12.50,\n  \"cost\": 4.00,\n  \"categoryId\": 1,\n  \"stock\": 75,\n  \"description\": \"Café arábigo de altura, tostado medio\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            },
+            "description": "Crea un nuevo producto. Si el código ya existe devuelve 409. Solo admin."
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Product\",\n  \"price\": 14.99,\n  \"cost\": 5.00,\n  \"categoryId\": 1,\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "1"]
+            },
+            "description": "Actualiza los datos de un producto existente. No se puede modificar el código. Solo admin."
+          }
+        },
+        {
+          "name": "Deactivate Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "1"]
+            },
+            "description": "Desactiva (soft delete) un producto. Solo admin."
+          }
+        },
+        {
+          "name": "Activate Product",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/1/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "1", "activate"]
+            },
+            "description": "Reactiva un producto desactivado. Solo admin. Devuelve 204 NoContent."
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Invoices",
+      "description": "Gestión de facturas. Admin ve todas. Vendedor solo ve las propias.",
+      "item": [
+        {
+          "name": "List Invoices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invoices"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "customerId", "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true },
+                { "key": "fromDate", "value": "", "disabled": true },
+                { "key": "toDate", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Lista paginada de facturas. Admin ve todas. Vendedor ve solo las propias. Filtros: customerId, status, fromDate, toDate."
+          }
+        },
+        {
+          "name": "Get Invoice by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invoices", "1"]
+            },
+            "description": "Obtiene una factura con todos sus detalles, pagos y relaciones. Vendedor solo puede ver sus propias facturas."
+          }
+        },
+        {
+          "name": "Create Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": 1,\n  \"type\": 0,\n  \"notes\": \"Factura de prueba\",\n  \"dueDate\": null,\n  \"details\": [\n    {\n      \"productId\": 1,\n      \"quantity\": 2,\n      \"unitPrice\": 8.50,\n      \"productName\": \"Café Espresso 250g\",\n      \"productCode\": \"BE-001\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invoices"]
+            },
+            "description": "Crea una nueva factuta. type: 0=Contado, 1=Credito (requiere dueDate). Genera número atómico secuencial. Disminuye el stock de cada producto."
+          }
+        },
+        {
+          "name": "Cancel Invoice",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices/1/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invoices", "1", "cancel"]
+            },
+            "description": "Anula una factura. Cambia el estado a Anulada. Devuelve 409 si ya está anulada."
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Company Config",
+      "description": "Configuración de la empresa (singleton). Admin puede modificar. Todos los autenticados pueden leer.",
+      "item": [
+        {
+          "name": "Get Company Config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/company-config",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "company-config"]
+            },
+            "description": "Obtiene la configuración de la empresa. Accesible por cualquier usuario autenticado."
+          }
+        },
+        {
+          "name": "Update Company Config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyName\": \"BG Invoice Demo\",\n  \"taxPercent\": 13,\n  \"currencySymbol\": \"$\",\n  \"phone\": \"+506 2222-3333\",\n  \"email\": \"info@bg.com\",\n  \"taxId\": \"3-101-123456\",\n  \"address\": \"Avenida Central\",\n  \"city\": \"San Jose\",\n  \"region\": \"Central\",\n  \"postalCode\": \"10101\",\n  \"logoUrl\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/company-config",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "company-config"]
+            },
+            "description": "Actualiza la configuración de la empresa. Solo admin."
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Dashboard",
+      "description": "Resumen del dashboard con datos filtrados por rol.",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "dashboard"]
+            },
+            "description": "Devuelve el resumen del dashboard: últimas 5 facturas, ventas mensuales del año y top 5 productos. Los datos se filtran según el rol del usuario autenticado."
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Health",
+      "description": "Endpoints de monitoreo y salud del sistema. No requieren autenticación.",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Health check del sistema. No requiere autenticación. Devuelve 200 si la API y la base de datos están operativas."
+          }
+        }
+      ]
+    }
+  ]
+}
