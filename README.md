@@ -64,24 +64,25 @@ public interface IInvoiceRepository : IRepository<Invoice>
     Task<IReadOnlyList<Invoice>> GetRecentAsync(int sellerId, int count, CancellationToken ct = default);
     // ...
 }
+```
 Por qué: el IRepository<T> genérico NO soporta .Include(u => u.Role) (no conoce navegación). Los repos especializados sí. Esto es la causa del bug de JWT con role vacío que tuvimos al inicio.
 2. Result Pattern (en services, no en controllers)
 Los services devuelven Result<T> con IsSuccess + Value + ErrorMessage + ValidationErrors. Los controllers lanzan excepciones tipadas que el GlobalExceptionMiddleware mapea a HTTP status codes.
 Por qué: la lógica de negocio compleja (validación de crédito, cálculo de totales, transición de estados) NO debería depender de HTTP. El service decide si la operación es válida; el controller decide cómo responder al cliente.
 3. Typed Exceptions + Centralized Messages
-5 excepciones tipadas en Domain/Exceptions/:
-- NotFoundException → 404
-- BusinessRuleException → 409
-- UnauthorizedException → 401
-- ForbiddenException → 403
-- AccountLockedException → 423
+    5 excepciones tipadas en Domain/Exceptions/:
+    - NotFoundException → 404
+    - BusinessRuleException → 409
+    - UnauthorizedException → 401
+    - ForbiddenException → 403
+    - AccountLockedException → 423
 Mensajes centralizados en Application/Common/Errors.cs (7 grupos, 17 constantes, 2 métodos estáticos). Cero strings inline de error en services o validators.
 Por qué: cambiar el mensaje de "rol no encontrado" se hace en 1 lugar, no en 12.
 4. Domain-Driven Design (DDD táctico)
-- Entidades con comportamiento: Invoice.Cancel(), Product.DecrementStock(), User.RecordFailedLogin() — la lógica está en el dominio, no en services
-- Aggregate roots: Invoice es el aggregate root de InvoiceDetail y Payment (solo se accede vía Invoice)
-- Value objects implícitos: Email, Price (decimal con invariantes), Identification
-- Factory methods: User.Create(...), Product.Create(...) con validación en el constructor
+    - Entidades con comportamiento: Invoice.Cancel(), Product.DecrementStock(), User.RecordFailedLogin() — la lógica está en el dominio, no en services
+    - Aggregate roots: Invoice es el aggregate root de InvoiceDetail y Payment (solo se accede vía Invoice)
+    - Value objects implícitos: Email, Price (decimal con invariantes), Identification
+    - Factory methods: User.Create(...), Product.Create(...) con validación en el constructor
 5. DI Registration (explícito, sin magia)
 Cada IXxxService se registra explícitamente en AddApplication() / AddInfrastructure(). Cero convenciones por nombre, cero reflection-based registration.
 Por qué: cuando un service no se registra, el error es inmediato (UnableToResolveService en startup), no en runtime cuando alguien lo pide.
