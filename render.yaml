@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: bg-invoice-api
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
+      - key: JwtSettings__Secret
+        generateValue: true
+      - key: JwtSettings__Issuer
+        value: BG.Invoice.Api
+      - key: JwtSettings__Audience
+        value: BG.Invoice.Api
+      - key: JwtSettings__ExpiryMinutes
+        value: "60"
+      - key: ConnectionStrings__DefaultConnection
+        value: Data Source=bg-invoice.db;Cache=Shared;Pooling=true;Foreign Keys=true;Default Timeout=30
+      - key: Cors__AllowedOrigins__0
+        value: http://localhost:4200
