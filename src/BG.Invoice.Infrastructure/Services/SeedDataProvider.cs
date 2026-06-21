@@ -141,9 +141,9 @@ public class SeedDataProvider : ISeedDataProvider
     {
         return CompanyConfig.Create(
             companyName: "BG Invoice Demo",
-            taxPercent: 13m,
+            taxPercent: 15m,
             currencySymbol: "$",
-            phone: "+506 2222-3333",
+            phone: "+593 555-123",
             email: "info@bg.com",
             taxId: "3-101-123456",
             address: "Avenida Central, Edificio 1",
