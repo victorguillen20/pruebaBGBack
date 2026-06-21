@@ -23,11 +23,6 @@ app.UseSerilogRequestLogging();
 app.UseMiddleware<RequestIdMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
-
 app.UseCors(CorsConfiguration.AllowAngularDev);
 app.UseAuthentication();
 app.UseAuthorization();
