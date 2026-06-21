@@ -26,6 +26,5 @@ public record CreateUserRequest(
 public record UpdateUserRequest(
     string FirstName,
     string LastName,
-    int RoleId,
-    bool IsActive
+    int RoleId
 );

@@ -74,7 +74,7 @@ public class User : Entity
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;
 
-    public void UpdateProfile(string firstName, string lastName, int roleId, bool isActive)
+    public void UpdateProfile(string firstName, string lastName, int roleId)
     {
         if (string.IsNullOrWhiteSpace(firstName)) throw new BusinessRuleException("FirstName is required.");
         if (string.IsNullOrWhiteSpace(lastName)) throw new BusinessRuleException("LastName is required.");
@@ -83,7 +83,6 @@ public class User : Entity
         FirstName = firstName.Trim();
         LastName = lastName.Trim();
         RoleId = roleId;
-        IsActive = isActive;
     }
 
     public string FullName => $"{FirstName} {LastName}";

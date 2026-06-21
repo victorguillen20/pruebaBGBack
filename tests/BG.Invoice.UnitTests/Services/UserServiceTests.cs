@@ -71,7 +71,7 @@ public class UserServiceTests
     public async Task UpdateAsync_ValidRequest_UpdatesUserFields()
     {
         var user = CreateUser(1, "admin", 1);
-        var request = new UpdateUserRequest("NewFirst", "NewLast", 2, false);
+        var request = new UpdateUserRequest("NewFirst", "NewLast", 2);
 
         _repository.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
@@ -82,9 +82,38 @@ public class UserServiceTests
         user.FirstName.Should().Be("NewFirst");
         user.LastName.Should().Be("NewLast");
         user.RoleId.Should().Be(2);
-        user.IsActive.Should().BeFalse();
         _repository.Verify(r => r.Update(user), Times.Once);
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_DoesNotChangeIsActive()
+    {
+        var user = CreateUser(1, "admin", 1);
+        var request = new UpdateUserRequest("NewFirst", "NewLast", 2);
+
+        _repository.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var result = await _sut.UpdateAsync(1, request);
+
+        result.IsSuccess.Should().BeTrue();
+        user.IsActive.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_DoesNotReactivateDeactivatedUser()
+    {
+        var user = CreateUser(1, "admin", 1, isActive: false);
+        var request = new UpdateUserRequest("NewFirst", "NewLast", 2);
+
+        _repository.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var result = await _sut.UpdateAsync(1, request);
+
+        result.IsSuccess.Should().BeTrue();
+        user.IsActive.Should().BeFalse();
     }
 
     [Fact]

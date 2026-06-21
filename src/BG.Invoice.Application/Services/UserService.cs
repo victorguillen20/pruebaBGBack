@@ -63,7 +63,7 @@ public class UserService : IUserService
         if (user is null)
             throw new NotFoundException("User", id);
 
-        user.UpdateProfile(request.FirstName, request.LastName, request.RoleId, request.IsActive);
+        user.UpdateProfile(request.FirstName, request.LastName, request.RoleId);
         _repository.Update(user);
         await _unitOfWork.SaveChangesAsync(ct);
 

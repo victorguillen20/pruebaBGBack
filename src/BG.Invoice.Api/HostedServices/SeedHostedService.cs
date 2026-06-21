@@ -49,6 +49,15 @@ public class SeedHostedService : IHostedService
         if (existingUsers.Count > 0)
         {
             _logger.LogInformation("Database already seeded. Skipping seed.");
+
+            var admin = existingUsers.FirstOrDefault(u => u.UserName == "admin");
+            if (admin is not null && !admin.IsActive)
+            {
+                admin.Activate();
+                await dbContext.SaveChangesAsync(ct);
+                _logger.LogInformation("Admin user reactivated after accidental soft-delete.");
+            }
+
             return;
         }
 
