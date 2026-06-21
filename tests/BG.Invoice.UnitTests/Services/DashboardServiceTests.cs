@@ -46,7 +46,7 @@ public class DashboardServiceTests
         };
         var customers = new List<Customer>
         {
-            Customer.Create("ID-001", "Customer A", CustomerType.Persona)
+            Customer.Create("00101234567", "Customer A", CustomerType.Persona)
         };
         var products = new List<Product>
         {

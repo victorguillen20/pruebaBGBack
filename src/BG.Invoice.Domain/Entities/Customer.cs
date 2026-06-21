@@ -26,12 +26,20 @@ public class Customer : Entity
         if (string.IsNullOrWhiteSpace(name)) throw new BusinessRuleException("Customer Name is required.");
         if (creditLimit.HasValue && creditLimit < 0) throw new BusinessRuleException("CreditLimit cannot be negative.");
 
+        var normalizedIdent = NormalizeIdentification(identification);
+        if (!IsValidIdentification(normalizedIdent))
+            throw new BusinessRuleException("La identificación debe tener entre 10 y 13 dígitos, sin guiones.");
+
+        var normalizedPhone = NormalizePhone(phone);
+        if (normalizedPhone is not null && !IsValidPhone(normalizedPhone))
+            throw new BusinessRuleException("El teléfono debe tener máximo 6 dígitos, sin guiones.");
+
         return new Customer
         {
-            Identification = identification.Trim(),
+            Identification = normalizedIdent,
             Name = name.Trim(),
             Type = type,
-            Phone = phone?.Trim(),
+            Phone = normalizedPhone,
             Email = email?.Trim().ToLowerInvariant(),
             Address = address?.Trim(),
             IsActive = true,
@@ -43,9 +51,14 @@ public class Customer : Entity
     {
         if (string.IsNullOrWhiteSpace(name)) throw new BusinessRuleException("Customer Name is required.");
         if (creditLimit.HasValue && creditLimit < 0) throw new BusinessRuleException("CreditLimit cannot be negative.");
+
+        var normalizedPhone = NormalizePhone(phone);
+        if (normalizedPhone is not null && !IsValidPhone(normalizedPhone))
+            throw new BusinessRuleException("El teléfono debe tener máximo 6 dígitos, sin guiones.");
+
         Name = name.Trim();
         Type = type;
-        Phone = phone?.Trim();
+        Phone = normalizedPhone;
         Email = email?.Trim().ToLowerInvariant();
         Address = address?.Trim();
         CreditLimit = creditLimit;
@@ -53,4 +66,15 @@ public class Customer : Entity
 
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;
+
+    private static string NormalizeIdentification(string value) => value.Replace("-", "").Trim();
+
+    private static string? NormalizePhone(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Replace("-", "").Trim();
+
+    private static bool IsValidIdentification(string value) =>
+        value.Length >= 10 && value.Length <= 13 && value.All(char.IsDigit);
+
+    private static bool IsValidPhone(string value) =>
+        value.Length >= 1 && value.Length <= 6 && value.All(char.IsDigit);
 }

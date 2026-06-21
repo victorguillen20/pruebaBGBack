@@ -51,11 +51,14 @@ public class CustomerService : ICustomerService
         if (!validationResult.IsValid)
             return Result.ValidationError<CustomerResponse>(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
 
-        var existing = await _repository.ListAsync(c => c.Identification == request.Identification, ct);
+        var normalizedIdent = request.Identification.Replace("-", "").Trim();
+        var normalizedPhone = request.Phone?.Replace("-", "").Trim();
+
+        var existing = await _repository.ListAsync(c => c.Identification == normalizedIdent, ct);
         if (existing.Any())
             throw new BusinessRuleException(Errors.Customer.IdentificationExists);
 
-        var customer = Customer.Create(request.Identification, request.Name, request.Type, request.Phone, request.Email, request.Address, request.CreditLimit);
+        var customer = Customer.Create(normalizedIdent, request.Name, request.Type, normalizedPhone, request.Email, request.Address, request.CreditLimit);
         await _repository.AddAsync(customer, ct);
         await _unitOfWork.SaveChangesAsync(ct);
         var createdAt = DateTime.UtcNow;
@@ -73,7 +76,8 @@ public class CustomerService : ICustomerService
         if (customer is null)
             throw new NotFoundException("Customer", id);
 
-        customer.Update(request.Name, request.Type, request.Phone, request.Email, request.Address, request.CreditLimit);
+        var normalizedPhone = request.Phone?.Replace("-", "").Trim();
+        customer.Update(request.Name, request.Type, normalizedPhone, request.Email, request.Address, request.CreditLimit);
         _repository.Update(customer);
         await _unitOfWork.SaveChangesAsync(ct);
         var createdAt = DateTime.UtcNow;

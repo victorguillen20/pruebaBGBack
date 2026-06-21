@@ -32,7 +32,7 @@ public class CustomerServiceTests
     [Fact]
     public async Task GetByIdAsync_ExistingCustomer_ReturnsCustomerResponse()
     {
-        var customer = CreateCustomer(1, "ID-001", "Test Customer");
+        var customer = CreateCustomer(1, "00101234567", "Test Customer");
 
         _repository.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
@@ -41,13 +41,13 @@ public class CustomerServiceTests
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Name.Should().Be("Test Customer");
-        result.Value.Identification.Should().Be("ID-001");
+        result.Value.Identification.Should().Be("00101234567");
     }
 
     [Fact]
     public async Task CreateAsync_UniqueIdentification_CreatesCustomer()
     {
-        var request = new CreateCustomerRequest("ID-001", "New Customer", CustomerType.Persona, null, null, null, null);
+        var request = new CreateCustomerRequest("00101234567", "New Customer", CustomerType.Persona, null, null, null, null);
 
         _repository.Setup(r => r.ListAsync(It.IsAny<Expression<Func<Customer, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Customer>().AsReadOnly());
@@ -62,8 +62,8 @@ public class CustomerServiceTests
     [Fact]
     public async Task CreateAsync_DuplicateIdentification_ThrowsBusinessRuleException()
     {
-        var existing = CreateCustomer(1, "ID-001", "Existing");
-        var request = new CreateCustomerRequest("ID-001", "New Customer", CustomerType.Persona, null, null, null, null);
+        var existing = CreateCustomer(1, "00101234567", "Existing");
+        var request = new CreateCustomerRequest("00101234567", "New Customer", CustomerType.Persona, null, null, null, null);
 
         _repository.Setup(r => r.ListAsync(It.IsAny<Expression<Func<Customer, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Customer> { existing }.AsReadOnly());
@@ -77,8 +77,8 @@ public class CustomerServiceTests
     [Fact]
     public async Task UpdateAsync_ExistingCustomer_UpdatesFields()
     {
-        var customer = CreateCustomer(1, "ID-001", "Old Name");
-        var request = new UpdateCustomerRequest("New Name", CustomerType.Persona, "555-0100", "new@test.com", "New Address", 1000m);
+        var customer = CreateCustomer(1, "00101234567", "Old Name");
+        var request = new UpdateCustomerRequest("New Name", CustomerType.Persona, "555100", "new@test.com", "New Address", 1000m);
 
         _repository.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
@@ -87,7 +87,7 @@ public class CustomerServiceTests
 
         result.IsSuccess.Should().BeTrue();
         customer.Name.Should().Be("New Name");
-        customer.Phone.Should().Be("555-0100");
+        customer.Phone.Should().Be("555100");
         _repository.Verify(r => r.Update(customer), Times.Once);
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

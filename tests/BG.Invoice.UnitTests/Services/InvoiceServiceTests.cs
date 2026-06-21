@@ -44,7 +44,7 @@ public class InvoiceServiceTests
 
     private static Customer CreateCustomer(int id)
     {
-        var customer = Customer.Create("ID-001", "Test Customer", CustomerType.Persona);
+        var customer = Customer.Create("00101234567", "Test Customer", CustomerType.Persona);
         customer.Id = id;
         return customer;
     }

@@ -103,11 +103,11 @@ public class SeedDataProvider : ISeedDataProvider
     {
         return new List<Customer>
         {
-            Customer.Create("001-0123456-7", "Distribuidora La Esperanza S.A.", CustomerType.Empresa, "555-1001", "contacto@laesperanza.com", "Av. Principal 100, San Jose", 50000m),
-            Customer.Create("002-0234567-8", "Maria Fernandez", CustomerType.Persona, "555-1002", "maria.f@gmail.com", "Calle 5, Casa 20, Heredia", 5000m),
-            Customer.Create("003-0345678-9", "Tech Solutions CR Ltda.", CustomerType.Empresa, "555-1003", "compras@techsolutions.cr", "Edificio Torre, Piso 5, San Jose", 100000m),
-            Customer.Create("004-0456789-0", "Roberto Vargas", CustomerType.Persona, "555-1004", null, null, 2000m),
-            Customer.Create("005-0567890-1", "Cafeteria Aroma S.A.", CustomerType.Empresa, "555-1005", "info@aroma.cr", "Plaza Central Local 12", 30000m)
+            Customer.Create("00101234567", "Distribuidora La Esperanza S.A.", CustomerType.Empresa, "555100", "contacto@laesperanza.com", "Av. Principal 100, San Jose", 50000m),
+            Customer.Create("00112345678", "Maria Fernandez", CustomerType.Persona, "555200", "maria.f@gmail.com", "Calle 5, Casa 20, Heredia", 5000m),
+            Customer.Create("13112345672", "Tech Solutions CR Ltda.", CustomerType.Empresa, "555300", "compras@techsolutions.cr", "Edificio Torre, Piso 5, San Jose", 100000m),
+            Customer.Create("00176543210", "Roberto Vargas", CustomerType.Persona, "555400", null, null, 2000m),
+            Customer.Create("13176543218", "Cafeteria Aroma S.A.", CustomerType.Empresa, "555500", "info@aroma.cr", "Plaza Central Local 12", 30000m)
         };
     }
 

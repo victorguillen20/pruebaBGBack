@@ -26,7 +26,7 @@ public class CustomerTests : IClassFixture<CustomWebApplicationFactory>
         var token = await AuthHelper.GetAdminTokenAsync(client);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var request = new CreateCustomerRequest("NEW-001", "New Customer", CustomerType.Persona, "555-9999", "new@test.com", "123 Main St", 1000m);
+        var request = new CreateCustomerRequest("09901234567", "New Customer", CustomerType.Persona, "555999", "new@test.com", "123 Main St", 1000m);
         var response = await client.PostAsJsonAsync("/api/customers", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -64,7 +64,7 @@ public class CustomerTests : IClassFixture<CustomWebApplicationFactory>
         var token = await AuthHelper.GetAdminTokenAsync(client);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var updateRequest = new UpdateCustomerRequest("Updated Name", CustomerType.Empresa, "555-0000", "updated@test.com", "456 New St", 5000m);
+        var updateRequest = new UpdateCustomerRequest("Updated Name", CustomerType.Empresa, "555000", "updated@test.com", "456 New St", 5000m);
         var updateResponse = await client.PutAsJsonAsync("/api/customers/1", updateRequest);
 
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -75,6 +75,6 @@ public class CustomerTests : IClassFixture<CustomWebApplicationFactory>
 
         customer.Should().NotBeNull();
         customer!.Name.Should().Be("Updated Name");
-        customer.Phone.Should().Be("555-0000");
+        customer.Phone.Should().Be("555000");
     }
 }

@@ -14,7 +14,7 @@ public class CreateCustomerValidatorTests
     [Fact]
     public void ValidRequest_PassesValidation()
     {
-        var request = new CreateCustomerRequest("123456", "Juan Perez", CustomerType.Persona, "555-1234", "juan@test.com", "Calle 123", null);
+        var request = new CreateCustomerRequest("123456", "Juan Perez", CustomerType.Persona, "555123", "juan@test.com", "Calle 123", null);
         var result = _validator.TestValidate(request);
         result.IsValid.Should().BeTrue();
     }
