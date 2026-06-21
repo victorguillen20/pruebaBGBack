@@ -14,17 +14,20 @@ public class UserService : IUserService
 
     private readonly IUserRepository _repository;
     private readonly IRepository<Role> _roleRepository;
+    private readonly IPasswordHasher _passwordHasher;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UserService> _logger;
 
     public UserService(
         IUserRepository repository,
         IRepository<Role> roleRepository,
+        IPasswordHasher passwordHasher,
         IUnitOfWork unitOfWork,
         ILogger<UserService> logger)
     {
         _repository = repository;
         _roleRepository = roleRepository;
+        _passwordHasher = passwordHasher;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -49,7 +52,15 @@ public class UserService : IUserService
 
     public async Task<Result<UserResponse>> CreateAsync(CreateUserRequest request, CancellationToken ct = default)
     {
-        var hash = "";
+        var existingUsername = await _repository.ListAsync(u => u.UserName == request.UserName, ct);
+        if (existingUsername.Any())
+            return Result.Failure<UserResponse>(Errors.User.UsernameTaken);
+
+        var existingEmail = await _repository.ListAsync(u => u.Email == request.Email, ct);
+        if (existingEmail.Any())
+            return Result.Failure<UserResponse>(Errors.User.EmailRegistered);
+
+        var hash = _passwordHasher.Hash(request.Password);
         var user = User.Create(request.UserName, request.Email, hash, request.FirstName, request.LastName, request.RoleId);
         await _repository.AddAsync(user, ct);
         await _unitOfWork.SaveChangesAsync(ct);

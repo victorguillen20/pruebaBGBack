@@ -13,13 +13,15 @@ public class UserServiceTests
 {
     private readonly Mock<IUserRepository> _repository = new();
     private readonly Mock<IRepository<Role>> _roleRepository = new();
+    private readonly Mock<IPasswordHasher> _passwordHasher = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly ILogger<UserService> _logger = Mock.Of<ILogger<UserService>>();
     private readonly UserService _sut;
 
     public UserServiceTests()
     {
-        _sut = new UserService(_repository.Object, _roleRepository.Object, _unitOfWork.Object, _logger);
+        _passwordHasher.Setup(p => p.Hash(It.IsAny<string>())).Returns("hashed_password");
+        _sut = new UserService(_repository.Object, _roleRepository.Object, _passwordHasher.Object, _unitOfWork.Object, _logger);
     }
 
     private static User CreateUser(int id, string userName, int roleId, bool isActive = true)
@@ -133,5 +135,52 @@ public class UserServiceTests
 
         await act.Should().ThrowAsync<BusinessRuleException>()
             .WithMessage(Errors.User.LastActiveAdmin);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ValidRequest_HashesPassword()
+    {
+        var request = new CreateUserRequest("newuser", "new@test.com", "P@ssword123", "P@ssword123", "New", "User", 2);
+
+        _repository.Setup(r => r.ListAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<User>().AsReadOnly());
+        _repository.Setup(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var result = await _sut.CreateAsync(request);
+
+        result.IsSuccess.Should().BeTrue();
+        _passwordHasher.Verify(p => p.Hash("P@ssword123"), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_DuplicateUsername_ReturnsFailure()
+    {
+        var request = new CreateUserRequest("existing", "new@test.com", "P@ssword123", "P@ssword123", "New", "User", 2);
+
+        _repository.Setup(r => r.ListAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<User> { CreateUser(99, "existing", 2) }.AsReadOnly());
+
+        var result = await _sut.CreateAsync(request);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorMessage.Should().Be(Errors.User.UsernameTaken);
+    }
+
+    [Fact]
+    public async Task CreateAsync_DuplicateEmail_ReturnsFailure()
+    {
+        var request = new CreateUserRequest("newuser", "used@test.com", "P@ssword123", "P@ssword123", "New", "User", 2);
+
+        _repository.SetupSequence(r => r.ListAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<User>().AsReadOnly()) // username check passes
+            .ReturnsAsync(new List<User> { CreateUser(99, "someone", 2) }.AsReadOnly()); // email check fails
+
+        var result = await _sut.CreateAsync(request);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorMessage.Should().Be(Errors.User.EmailRegistered);
     }
 }
