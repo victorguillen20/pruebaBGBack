@@ -1,5 +1,6 @@
 using BG.Invoice.Application.Abstractions;
 using BG.Invoice.Domain.Entities;
+using BG.Invoice.Domain.Enums;
 using BG.Invoice.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -56,6 +57,27 @@ public class SeedHostedService : IHostedService
                 admin.Activate();
                 await dbContext.SaveChangesAsync(ct);
                 _logger.LogInformation("Admin user reactivated after accidental soft-delete.");
+            }
+
+            var config = await dbContext.Set<CompanyConfig>().FindAsync(new object[] { 1 }, ct);
+            if (config is not null)
+            {
+                var invoicesWithoutTax = await dbContext.Set<Domain.Entities.Invoice>()
+                    .Where(i => i.TaxAmount == 0m && i.Status != InvoiceStatus.Anulada)
+                    .ToListAsync(ct);
+
+                if (invoicesWithoutTax.Count > 0)
+                {
+                    var taxRate = config.TaxPercent / 100m;
+                    foreach (var inv in invoicesWithoutTax)
+                    {
+                        inv.SetTaxAmount(
+                            Math.Round(inv.Subtotal * taxRate, 2, MidpointRounding.AwayFromZero),
+                            config.TaxPercent);
+                    }
+                    await dbContext.SaveChangesAsync(ct);
+                    _logger.LogInformation("Impuesto recalculado para {Count} facturas existentes.", invoicesWithoutTax.Count);
+                }
             }
 
             return;

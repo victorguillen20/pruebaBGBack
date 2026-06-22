@@ -1,4 +1,5 @@
 using BG.Invoice.Application.Abstractions;
+using BG.Invoice.Application.Pdf;
 using BG.Invoice.Application.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +22,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<IInvoicePdfGenerator, InvoicePdfGenerator>();
 
         return services;
     }

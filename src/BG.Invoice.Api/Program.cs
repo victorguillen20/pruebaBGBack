@@ -3,7 +3,10 @@ using BG.Invoice.Api.Extensions;
 using BG.Invoice.Api.Middleware;
 using BG.Invoice.Application.DI;
 using BG.Invoice.Infrastructure.DI;
+using QuestPDF.Infrastructure;
 using Serilog;
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 

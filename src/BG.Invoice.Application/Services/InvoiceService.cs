@@ -19,6 +19,7 @@ public class InvoiceService : IInvoiceService
     private readonly IInvoiceNumberGenerator _numberGenerator;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IClock _clock;
+    private readonly ICompanyConfigService _configService;
     private readonly ILogger<InvoiceService> _logger;
 
     public InvoiceService(
@@ -28,6 +29,7 @@ public class InvoiceService : IInvoiceService
         IInvoiceNumberGenerator numberGenerator,
         IUnitOfWork unitOfWork,
         IClock clock,
+        ICompanyConfigService configService,
         ILogger<InvoiceService> logger)
     {
         _invoiceRepository = invoiceRepository;
@@ -36,6 +38,7 @@ public class InvoiceService : IInvoiceService
         _numberGenerator = numberGenerator;
         _unitOfWork = unitOfWork;
         _clock = clock;
+        _configService = configService;
         _logger = logger;
     }
 
@@ -103,9 +106,12 @@ public class InvoiceService : IInvoiceService
             invoice.AddDetail(detailRequest.ProductId, detailRequest.Quantity, detailRequest.UnitPrice, detailRequest.ProductName, detailRequest.ProductCode);
         }
 
-        var configRate = 0.13m;
+        var configResult = await _configService.GetAsync(ct);
+        var config = configResult.Value!;
+        var taxPercent = config.TaxPercent;
+        var configRate = taxPercent / 100m;
         var taxAmount = Math.Round(invoice.Subtotal * configRate, 2, MidpointRounding.AwayFromZero);
-        invoice.SetTaxAmount(taxAmount, configRate * 100);
+        invoice.SetTaxAmount(taxAmount, taxPercent);
 
         await _invoiceRepository.AddAsync(invoice, ct);
         await _unitOfWork.SaveChangesAsync(ct);

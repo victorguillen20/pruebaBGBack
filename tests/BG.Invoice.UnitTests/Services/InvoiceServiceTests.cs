@@ -20,6 +20,7 @@ public class InvoiceServiceTests
     private readonly Mock<IInvoiceNumberGenerator> _numberGenerator = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IClock> _clock = new();
+    private readonly Mock<ICompanyConfigService> _configService = new();
     private readonly ILogger<InvoiceService> _logger = Mock.Of<ILogger<InvoiceService>>();
     private readonly InvoiceService _sut;
 
@@ -32,6 +33,7 @@ public class InvoiceServiceTests
             _numberGenerator.Object,
             _unitOfWork.Object,
             _clock.Object,
+            _configService.Object,
             _logger);
     }
 
@@ -143,6 +145,8 @@ public class InvoiceServiceTests
         _clock.SetupGet(c => c.UtcNow).Returns(FixedNow);
         _productRepository.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
+        _configService.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success(new CompanyConfigResponse(1, "Test", null, null, null, 13m, "$", null, null, null, null, null, 0)));
 
         var result = await _sut.CreateAsync(request, 20);
 
@@ -151,6 +155,37 @@ public class InvoiceServiceTests
         product.Stock.Should().Be(48);
         _invoiceRepository.Verify(r => r.AddAsync(It.IsAny<BG.Invoice.Domain.Entities.Invoice>(), It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_UsesCompanyConfigTaxPercent()
+    {
+        var customer = CreateCustomer(10);
+        var product = CreateProduct(1, 50);
+        var request = new CreateInvoiceRequest(
+            10, InvoiceType.Contado, null, null,
+            new List<CreateInvoiceDetailRequest>
+            {
+                new(1, 2, 22.00m, "Producto", "P001")
+            });
+
+        _customerRepository.Setup(r => r.GetByIdAsync(10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(customer);
+        _numberGenerator.Setup(g => g.GenerateNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1001);
+        _clock.SetupGet(c => c.UtcNow).Returns(FixedNow);
+        _productRepository.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(product);
+        _configService.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success(new CompanyConfigResponse(1, "Test", null, null, null, 15m, "$", null, null, null, null, null, 0)));
+
+        var result = await _sut.CreateAsync(request, 20);
+
+        result.IsSuccess.Should().BeTrue();
+        var expectedTax = Math.Round(44.00m * 0.15m, 2, MidpointRounding.AwayFromZero);
+        result.Value!.TaxAmount.Should().Be(expectedTax);
+        result.Value.Total.Should().Be(44.00m + expectedTax);
+        _configService.Verify(s => s.GetAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

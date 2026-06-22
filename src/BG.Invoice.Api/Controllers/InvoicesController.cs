@@ -2,6 +2,7 @@ using BG.Invoice.Api.Configuration;
 using BG.Invoice.Application.Abstractions;
 using BG.Invoice.Application.Dtos;
 using BG.Invoice.Domain.Enums;
+using BG.Invoice.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,11 +15,13 @@ public class InvoicesController : ControllerBase
 {
     private readonly IInvoiceService _invoiceService;
     private readonly ICurrentUser _currentUser;
+    private readonly IInvoicePdfGenerator _pdfGenerator;
 
-    public InvoicesController(IInvoiceService invoiceService, ICurrentUser currentUser)
+    public InvoicesController(IInvoiceService invoiceService, ICurrentUser currentUser, IInvoicePdfGenerator pdfGenerator)
     {
         _invoiceService = invoiceService;
         _currentUser = currentUser;
+        _pdfGenerator = pdfGenerator;
     }
 
     [HttpGet]
@@ -48,6 +51,16 @@ public class InvoicesController : ControllerBase
     {
         var result = await _invoiceService.GetByIdAsync(id, _currentUser.UserId, _currentUser.IsAdmin, ct);
         return Ok(result.Value);
+    }
+
+    [HttpGet("{id}/pdf")]
+    public async Task<IActionResult> GetPdf(int id, CancellationToken ct)
+    {
+        var result = await _invoiceService.GetByIdAsync(id, _currentUser.UserId, _currentUser.IsAdmin, ct);
+        if (result.Value is null)
+            throw new NotFoundException("Invoice", id);
+        var pdfBytes = await _pdfGenerator.GenerateAsync(result.Value, ct);
+        return File(pdfBytes, "application/pdf", $"factura-{result.Value.Number}.pdf");
     }
 
     [HttpPost]

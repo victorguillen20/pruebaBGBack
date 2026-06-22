@@ -10,6 +10,7 @@ public static class InvoiceMappings
         return new InvoiceResponse(
             invoice.Id, invoice.Number, invoice.Date,
             invoice.CustomerId, invoice.Customer?.Name ?? "",
+            invoice.Customer?.Identification, invoice.Customer?.Phone, invoice.Customer?.Email,
             invoice.SellerId, invoice.Seller?.FullName ?? "",
             invoice.Type, invoice.DueDate, invoice.Status,
             invoice.Notes, invoice.Subtotal, invoice.TaxAmount, invoice.Total,
