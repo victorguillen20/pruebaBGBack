@@ -27,6 +27,7 @@ public record InvoiceSummaryResponse(
     int Number,
     DateTime Date,
     string CustomerName,
+    InvoiceType Type,
     InvoiceStatus Status,
     decimal Total,
     string? SellerName

@@ -22,7 +22,7 @@ public static class InvoiceMappings
     {
         return new InvoiceSummaryResponse(
             invoice.Id, invoice.Number, invoice.Date,
-            invoice.Customer?.Name ?? "", invoice.Status, invoice.Total,
+            invoice.Customer?.Name ?? "", invoice.Type, invoice.Status, invoice.Total,
             invoice.Seller?.FullName ?? "");
     }
 
